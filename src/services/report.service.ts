@@ -22,17 +22,17 @@ export const reportService = {
       const valor = toMoneyNumber(transaction.valor as never);
 
       if (transaction.tipo === "receita") {
-        acumulado.receitas += valor;
+        acumulado.receitas += Math.round(valor * 100);
       } else {
-        acumulado.despesas += valor;
+        acumulado.despesas += Math.round(valor * 100);
       }
     }
 
     return Array.from(totalsByMonth.entries()).map(([mes, totals]) => ({
       mes,
-      total_receitas: totals.receitas,
-      total_despesas: totals.despesas,
-      saldo: totals.receitas - totals.despesas,
+      total_receitas: totals.receitas / 100,
+      total_despesas: totals.despesas / 100,
+      saldo: (totals.receitas - totals.despesas) / 100,
     }));
   },
 };
