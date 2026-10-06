@@ -7,3 +7,5 @@ export const reportRoutes = Router();
 reportRoutes.use(authMiddleware);
 
 reportRoutes.get("/monthly", reportController.monthly);
+
+reportRoutes.get("/detailed", reportController.detailed);
