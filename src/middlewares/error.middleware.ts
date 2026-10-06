@@ -23,6 +23,10 @@ export function errorMiddleware(
       res.status(409).json({ message: "Registro já existe." });
       return;
     }
+    if (err.code === "P2003") {
+      res.status(409).json({ message: "Registro possui vínculos com outros dados e não pode ser excluído." });
+      return;
+    }
     if (err.code === "P2025") {
       res.status(404).json({ message: "Registro não encontrado." });
       return;

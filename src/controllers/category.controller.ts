@@ -3,9 +3,9 @@ import { categoryService } from "../services/category.service.js";
 import { parseIdParam } from "../utils/parseIdParam.js";
 
 export const categoryController = {
-  async list(_req: Request, res: Response, next: NextFunction): Promise<void> {
+  async list(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const categories = await categoryService.list();
+      const categories = await categoryService.list(req.userId!);
       res.status(200).json(categories);
     } catch (error) {
       next(error);
@@ -15,7 +15,7 @@ export const categoryController = {
   async getById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const id = parseIdParam(req);
-      const category = await categoryService.getById(id);
+      const category = await categoryService.getById(id, req.userId!);
       res.status(200).json(category);
     } catch (error) {
       next(error);
@@ -24,7 +24,7 @@ export const categoryController = {
 
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const category = await categoryService.create(req.body);
+      const category = await categoryService.create(req.userId!, req.body);
       res.status(201).json(category);
     } catch (error) {
       next(error);
@@ -34,7 +34,7 @@ export const categoryController = {
   async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const id = parseIdParam(req);
-      const category = await categoryService.update(id, req.body);
+      const category = await categoryService.update(id, req.userId!, req.body);
       res.status(200).json(category);
     } catch (error) {
       next(error);
@@ -44,7 +44,7 @@ export const categoryController = {
   async remove(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const id = parseIdParam(req);
-      await categoryService.remove(id);
+      await categoryService.remove(id, req.userId!);
       res.status(204).send();
     } catch (error) {
       next(error);

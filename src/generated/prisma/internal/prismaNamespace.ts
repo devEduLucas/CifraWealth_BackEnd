@@ -717,6 +717,7 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 
 
 export const CategoriasScalarFieldEnum = {
+  id_usuario: 'id_usuario',
   id_categoria: 'id_categoria',
   nome: 'nome',
   tipo: 'tipo',
