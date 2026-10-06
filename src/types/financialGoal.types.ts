@@ -1,36 +1,20 @@
 import { z } from "zod";
-
-const dateOnlyRegex = /^\d{4}-\d{2}-\d{2}$/;
+import { dateOnlySchema, datesInOrder, moneySchema } from "../utils/validationSchemas.js";
 
 export const goalStatusSchema = z.enum(["em_andamento", "concluida", "cancelada"]);
-
-export const createGoalSchema = z.object({
+const goalFields = z.object({
   titulo: z.string().trim().min(1, "Título é obrigatório.").max(100),
-  descricao: z.string().trim().max(255).optional(),
-  valor_objetivo: z.number().positive("Valor objetivo deve ser maior que zero."),
-  data_inicio: z.string().regex(dateOnlyRegex).optional(),
-  data_fim: z.string().regex(dateOnlyRegex).optional(),
+  descricao: z.string().trim().max(255).nullable().optional(),
+  valor_objetivo: moneySchema,
+  data_inicio: dateOnlySchema.nullable().optional(),
+  data_fim: dateOnlySchema.nullable().optional(),
 });
-
+export const createGoalSchema = goalFields.refine(datesInOrder, "Prazo deve ser igual ou posterior à data de início.");
+export const updateGoalSchema = goalFields.partial().extend({ status: goalStatusSchema.optional() }).refine(datesInOrder, "Prazo deve ser igual ou posterior à data de início.");
+export const contributeGoalSchema = z.object({ valor: moneySchema });
 export type CreateGoalInput = z.infer<typeof createGoalSchema>;
-
-export const updateGoalSchema = z.object({
-  titulo: z.string().trim().min(1).max(100).optional(),
-  descricao: z.string().trim().max(255).optional(),
-  valor_objetivo: z.number().positive().optional(),
-  status: goalStatusSchema.optional(),
-  data_inicio: z.string().regex(dateOnlyRegex).optional(),
-  data_fim: z.string().regex(dateOnlyRegex).optional(),
-});
-
 export type UpdateGoalInput = z.infer<typeof updateGoalSchema>;
-
-export const contributeGoalSchema = z.object({
-  valor: z.number().positive("Valor deve ser maior que zero."),
-});
-
 export type ContributeGoalInput = z.infer<typeof contributeGoalSchema>;
-
 export interface GoalResponse {
   id_meta: number;
   titulo: string;
