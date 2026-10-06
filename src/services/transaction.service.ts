@@ -31,12 +31,13 @@ function toTransactionResponse(transaction: {
   };
 }
 
-async function ensureCategoryExists(id_categoria: number): Promise<void> {
-  const category = await categoryRepository.findById(id_categoria);
+async function ensureCategoryExists(id_categoria: number, userId: number, tipo: "receita" | "despesa"): Promise<void> {
+  const category = await categoryRepository.findById(id_categoria, userId);
 
   if (!category) {
     throw new AppError("Categoria não encontrada.", 404);
   }
+  if (category.tipo !== tipo) throw new AppError("O tipo da categoria deve corresponder ao tipo da transação.", 400);
 }
 
 export const transactionService = {
@@ -63,7 +64,7 @@ export const transactionService = {
   },
 
   async create(userId: number, input: CreateTransactionInput): Promise<TransactionResponse> {
-    await ensureCategoryExists(input.id_categoria);
+    await ensureCategoryExists(input.id_categoria, userId, input.tipo);
 
     const transaction = await transactionRepository.create(userId, {
       id_categoria: input.id_categoria,
@@ -82,13 +83,10 @@ export const transactionService = {
     userId: number,
     input: UpdateTransactionInput
   ): Promise<TransactionResponse> {
-    await transactionService.getById(id, userId);
+    const current = await transactionService.getById(id, userId);
+    await ensureCategoryExists(input.id_categoria ?? current.id_categoria, userId, input.tipo ?? current.tipo);
 
-    if (input.id_categoria !== undefined) {
-      await ensureCategoryExists(input.id_categoria);
-    }
-
-    const transaction = await transactionRepository.update(id, {
+    const transaction = await transactionRepository.update(id, userId, {
       ...(input.id_categoria !== undefined && { id_categoria: input.id_categoria }),
       ...(input.valor !== undefined && { valor: toDecimal(input.valor) }),
       ...(input.tipo !== undefined && { tipo: input.tipo }),
@@ -104,6 +102,6 @@ export const transactionService = {
 
   async remove(id: number, userId: number): Promise<void> {
     await transactionService.getById(id, userId);
-    await transactionRepository.delete(id);
+    await transactionRepository.delete(id, userId);
   },
 };

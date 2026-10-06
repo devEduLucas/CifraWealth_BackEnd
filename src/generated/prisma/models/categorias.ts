@@ -27,14 +27,17 @@ export type AggregateCategorias = {
 }
 
 export type CategoriasAvgAggregateOutputType = {
+  id_usuario: number | null
   id_categoria: number | null
 }
 
 export type CategoriasSumAggregateOutputType = {
+  id_usuario: number | null
   id_categoria: number | null
 }
 
 export type CategoriasMinAggregateOutputType = {
+  id_usuario: number | null
   id_categoria: number | null
   nome: string | null
   tipo: $Enums.categorias_tipo | null
@@ -45,6 +48,7 @@ export type CategoriasMinAggregateOutputType = {
 }
 
 export type CategoriasMaxAggregateOutputType = {
+  id_usuario: number | null
   id_categoria: number | null
   nome: string | null
   tipo: $Enums.categorias_tipo | null
@@ -55,6 +59,7 @@ export type CategoriasMaxAggregateOutputType = {
 }
 
 export type CategoriasCountAggregateOutputType = {
+  id_usuario: number
   id_categoria: number
   nome: number
   tipo: number
@@ -67,14 +72,17 @@ export type CategoriasCountAggregateOutputType = {
 
 
 export type CategoriasAvgAggregateInputType = {
+  id_usuario?: true
   id_categoria?: true
 }
 
 export type CategoriasSumAggregateInputType = {
+  id_usuario?: true
   id_categoria?: true
 }
 
 export type CategoriasMinAggregateInputType = {
+  id_usuario?: true
   id_categoria?: true
   nome?: true
   tipo?: true
@@ -85,6 +93,7 @@ export type CategoriasMinAggregateInputType = {
 }
 
 export type CategoriasMaxAggregateInputType = {
+  id_usuario?: true
   id_categoria?: true
   nome?: true
   tipo?: true
@@ -95,6 +104,7 @@ export type CategoriasMaxAggregateInputType = {
 }
 
 export type CategoriasCountAggregateInputType = {
+  id_usuario?: true
   id_categoria?: true
   nome?: true
   tipo?: true
@@ -192,6 +202,7 @@ export type categoriasGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inter
 }
 
 export type CategoriasGroupByOutputType = {
+  id_usuario: number | null
   id_categoria: number
   nome: string
   tipo: $Enums.categorias_tipo
@@ -225,6 +236,7 @@ export type categoriasWhereInput = {
   AND?: Prisma.categoriasWhereInput | Prisma.categoriasWhereInput[]
   OR?: Prisma.categoriasWhereInput[]
   NOT?: Prisma.categoriasWhereInput | Prisma.categoriasWhereInput[]
+  id_usuario?: Prisma.IntNullableFilter<"categorias"> | number | null
   id_categoria?: Prisma.IntFilter<"categorias"> | number
   nome?: Prisma.StringFilter<"categorias"> | string
   tipo?: Prisma.Enumcategorias_tipoFilter<"categorias"> | $Enums.categorias_tipo
@@ -232,10 +244,12 @@ export type categoriasWhereInput = {
   cor?: Prisma.StringNullableFilter<"categorias"> | string | null
   created_at?: Prisma.DateTimeNullableFilter<"categorias"> | Date | string | null
   updated_at?: Prisma.DateTimeNullableFilter<"categorias"> | Date | string | null
+  usuarios?: Prisma.XOR<Prisma.UsuariosNullableScalarRelationFilter, Prisma.usuariosWhereInput> | null
   transacoes?: Prisma.TransacoesListRelationFilter
 }
 
 export type categoriasOrderByWithRelationInput = {
+  id_usuario?: Prisma.SortOrderInput | Prisma.SortOrder
   id_categoria?: Prisma.SortOrder
   nome?: Prisma.SortOrder
   tipo?: Prisma.SortOrder
@@ -243,6 +257,7 @@ export type categoriasOrderByWithRelationInput = {
   cor?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrderInput | Prisma.SortOrder
   updated_at?: Prisma.SortOrderInput | Prisma.SortOrder
+  usuarios?: Prisma.usuariosOrderByWithRelationInput
   transacoes?: Prisma.transacoesOrderByRelationAggregateInput
   _relevance?: Prisma.categoriasOrderByRelevanceInput
 }
@@ -252,16 +267,19 @@ export type categoriasWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.categoriasWhereInput | Prisma.categoriasWhereInput[]
   OR?: Prisma.categoriasWhereInput[]
   NOT?: Prisma.categoriasWhereInput | Prisma.categoriasWhereInput[]
+  id_usuario?: Prisma.IntNullableFilter<"categorias"> | number | null
   nome?: Prisma.StringFilter<"categorias"> | string
   tipo?: Prisma.Enumcategorias_tipoFilter<"categorias"> | $Enums.categorias_tipo
   icone?: Prisma.StringNullableFilter<"categorias"> | string | null
   cor?: Prisma.StringNullableFilter<"categorias"> | string | null
   created_at?: Prisma.DateTimeNullableFilter<"categorias"> | Date | string | null
   updated_at?: Prisma.DateTimeNullableFilter<"categorias"> | Date | string | null
+  usuarios?: Prisma.XOR<Prisma.UsuariosNullableScalarRelationFilter, Prisma.usuariosWhereInput> | null
   transacoes?: Prisma.TransacoesListRelationFilter
 }, "id_categoria">
 
 export type categoriasOrderByWithAggregationInput = {
+  id_usuario?: Prisma.SortOrderInput | Prisma.SortOrder
   id_categoria?: Prisma.SortOrder
   nome?: Prisma.SortOrder
   tipo?: Prisma.SortOrder
@@ -280,6 +298,7 @@ export type categoriasScalarWhereWithAggregatesInput = {
   AND?: Prisma.categoriasScalarWhereWithAggregatesInput | Prisma.categoriasScalarWhereWithAggregatesInput[]
   OR?: Prisma.categoriasScalarWhereWithAggregatesInput[]
   NOT?: Prisma.categoriasScalarWhereWithAggregatesInput | Prisma.categoriasScalarWhereWithAggregatesInput[]
+  id_usuario?: Prisma.IntNullableWithAggregatesFilter<"categorias"> | number | null
   id_categoria?: Prisma.IntWithAggregatesFilter<"categorias"> | number
   nome?: Prisma.StringWithAggregatesFilter<"categorias"> | string
   tipo?: Prisma.Enumcategorias_tipoWithAggregatesFilter<"categorias"> | $Enums.categorias_tipo
@@ -296,10 +315,12 @@ export type categoriasCreateInput = {
   cor?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
+  usuarios?: Prisma.usuariosCreateNestedOneWithoutCategoriasInput
   transacoes?: Prisma.transacoesCreateNestedManyWithoutCategoriasInput
 }
 
 export type categoriasUncheckedCreateInput = {
+  id_usuario?: number | null
   id_categoria?: number
   nome: string
   tipo: $Enums.categorias_tipo
@@ -317,10 +338,12 @@ export type categoriasUpdateInput = {
   cor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  usuarios?: Prisma.usuariosUpdateOneWithoutCategoriasNestedInput
   transacoes?: Prisma.transacoesUpdateManyWithoutCategoriasNestedInput
 }
 
 export type categoriasUncheckedUpdateInput = {
+  id_usuario?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   id_categoria?: Prisma.IntFieldUpdateOperationsInput | number
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   tipo?: Prisma.Enumcategorias_tipoFieldUpdateOperationsInput | $Enums.categorias_tipo
@@ -332,6 +355,7 @@ export type categoriasUncheckedUpdateInput = {
 }
 
 export type categoriasCreateManyInput = {
+  id_usuario?: number | null
   id_categoria?: number
   nome: string
   tipo: $Enums.categorias_tipo
@@ -351,6 +375,7 @@ export type categoriasUpdateManyMutationInput = {
 }
 
 export type categoriasUncheckedUpdateManyInput = {
+  id_usuario?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   id_categoria?: Prisma.IntFieldUpdateOperationsInput | number
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   tipo?: Prisma.Enumcategorias_tipoFieldUpdateOperationsInput | $Enums.categorias_tipo
@@ -367,6 +392,7 @@ export type categoriasOrderByRelevanceInput = {
 }
 
 export type categoriasCountOrderByAggregateInput = {
+  id_usuario?: Prisma.SortOrder
   id_categoria?: Prisma.SortOrder
   nome?: Prisma.SortOrder
   tipo?: Prisma.SortOrder
@@ -377,10 +403,12 @@ export type categoriasCountOrderByAggregateInput = {
 }
 
 export type categoriasAvgOrderByAggregateInput = {
+  id_usuario?: Prisma.SortOrder
   id_categoria?: Prisma.SortOrder
 }
 
 export type categoriasMaxOrderByAggregateInput = {
+  id_usuario?: Prisma.SortOrder
   id_categoria?: Prisma.SortOrder
   nome?: Prisma.SortOrder
   tipo?: Prisma.SortOrder
@@ -391,6 +419,7 @@ export type categoriasMaxOrderByAggregateInput = {
 }
 
 export type categoriasMinOrderByAggregateInput = {
+  id_usuario?: Prisma.SortOrder
   id_categoria?: Prisma.SortOrder
   nome?: Prisma.SortOrder
   tipo?: Prisma.SortOrder
@@ -401,12 +430,23 @@ export type categoriasMinOrderByAggregateInput = {
 }
 
 export type categoriasSumOrderByAggregateInput = {
+  id_usuario?: Prisma.SortOrder
   id_categoria?: Prisma.SortOrder
 }
 
 export type CategoriasScalarRelationFilter = {
   is?: Prisma.categoriasWhereInput
   isNot?: Prisma.categoriasWhereInput
+}
+
+export type CategoriasListRelationFilter = {
+  every?: Prisma.categoriasWhereInput
+  some?: Prisma.categoriasWhereInput
+  none?: Prisma.categoriasWhereInput
+}
+
+export type categoriasOrderByRelationAggregateInput = {
+  _count?: Prisma.SortOrder
 }
 
 export type StringFieldUpdateOperationsInput = {
@@ -423,6 +463,14 @@ export type NullableStringFieldUpdateOperationsInput = {
 
 export type NullableDateTimeFieldUpdateOperationsInput = {
   set?: Date | string | null
+}
+
+export type NullableIntFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
 }
 
 export type IntFieldUpdateOperationsInput = {
@@ -447,6 +495,48 @@ export type categoriasUpdateOneRequiredWithoutTransacoesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.categoriasUpdateToOneWithWhereWithoutTransacoesInput, Prisma.categoriasUpdateWithoutTransacoesInput>, Prisma.categoriasUncheckedUpdateWithoutTransacoesInput>
 }
 
+export type categoriasCreateNestedManyWithoutUsuariosInput = {
+  create?: Prisma.XOR<Prisma.categoriasCreateWithoutUsuariosInput, Prisma.categoriasUncheckedCreateWithoutUsuariosInput> | Prisma.categoriasCreateWithoutUsuariosInput[] | Prisma.categoriasUncheckedCreateWithoutUsuariosInput[]
+  connectOrCreate?: Prisma.categoriasCreateOrConnectWithoutUsuariosInput | Prisma.categoriasCreateOrConnectWithoutUsuariosInput[]
+  createMany?: Prisma.categoriasCreateManyUsuariosInputEnvelope
+  connect?: Prisma.categoriasWhereUniqueInput | Prisma.categoriasWhereUniqueInput[]
+}
+
+export type categoriasUncheckedCreateNestedManyWithoutUsuariosInput = {
+  create?: Prisma.XOR<Prisma.categoriasCreateWithoutUsuariosInput, Prisma.categoriasUncheckedCreateWithoutUsuariosInput> | Prisma.categoriasCreateWithoutUsuariosInput[] | Prisma.categoriasUncheckedCreateWithoutUsuariosInput[]
+  connectOrCreate?: Prisma.categoriasCreateOrConnectWithoutUsuariosInput | Prisma.categoriasCreateOrConnectWithoutUsuariosInput[]
+  createMany?: Prisma.categoriasCreateManyUsuariosInputEnvelope
+  connect?: Prisma.categoriasWhereUniqueInput | Prisma.categoriasWhereUniqueInput[]
+}
+
+export type categoriasUpdateManyWithoutUsuariosNestedInput = {
+  create?: Prisma.XOR<Prisma.categoriasCreateWithoutUsuariosInput, Prisma.categoriasUncheckedCreateWithoutUsuariosInput> | Prisma.categoriasCreateWithoutUsuariosInput[] | Prisma.categoriasUncheckedCreateWithoutUsuariosInput[]
+  connectOrCreate?: Prisma.categoriasCreateOrConnectWithoutUsuariosInput | Prisma.categoriasCreateOrConnectWithoutUsuariosInput[]
+  upsert?: Prisma.categoriasUpsertWithWhereUniqueWithoutUsuariosInput | Prisma.categoriasUpsertWithWhereUniqueWithoutUsuariosInput[]
+  createMany?: Prisma.categoriasCreateManyUsuariosInputEnvelope
+  set?: Prisma.categoriasWhereUniqueInput | Prisma.categoriasWhereUniqueInput[]
+  disconnect?: Prisma.categoriasWhereUniqueInput | Prisma.categoriasWhereUniqueInput[]
+  delete?: Prisma.categoriasWhereUniqueInput | Prisma.categoriasWhereUniqueInput[]
+  connect?: Prisma.categoriasWhereUniqueInput | Prisma.categoriasWhereUniqueInput[]
+  update?: Prisma.categoriasUpdateWithWhereUniqueWithoutUsuariosInput | Prisma.categoriasUpdateWithWhereUniqueWithoutUsuariosInput[]
+  updateMany?: Prisma.categoriasUpdateManyWithWhereWithoutUsuariosInput | Prisma.categoriasUpdateManyWithWhereWithoutUsuariosInput[]
+  deleteMany?: Prisma.categoriasScalarWhereInput | Prisma.categoriasScalarWhereInput[]
+}
+
+export type categoriasUncheckedUpdateManyWithoutUsuariosNestedInput = {
+  create?: Prisma.XOR<Prisma.categoriasCreateWithoutUsuariosInput, Prisma.categoriasUncheckedCreateWithoutUsuariosInput> | Prisma.categoriasCreateWithoutUsuariosInput[] | Prisma.categoriasUncheckedCreateWithoutUsuariosInput[]
+  connectOrCreate?: Prisma.categoriasCreateOrConnectWithoutUsuariosInput | Prisma.categoriasCreateOrConnectWithoutUsuariosInput[]
+  upsert?: Prisma.categoriasUpsertWithWhereUniqueWithoutUsuariosInput | Prisma.categoriasUpsertWithWhereUniqueWithoutUsuariosInput[]
+  createMany?: Prisma.categoriasCreateManyUsuariosInputEnvelope
+  set?: Prisma.categoriasWhereUniqueInput | Prisma.categoriasWhereUniqueInput[]
+  disconnect?: Prisma.categoriasWhereUniqueInput | Prisma.categoriasWhereUniqueInput[]
+  delete?: Prisma.categoriasWhereUniqueInput | Prisma.categoriasWhereUniqueInput[]
+  connect?: Prisma.categoriasWhereUniqueInput | Prisma.categoriasWhereUniqueInput[]
+  update?: Prisma.categoriasUpdateWithWhereUniqueWithoutUsuariosInput | Prisma.categoriasUpdateWithWhereUniqueWithoutUsuariosInput[]
+  updateMany?: Prisma.categoriasUpdateManyWithWhereWithoutUsuariosInput | Prisma.categoriasUpdateManyWithWhereWithoutUsuariosInput[]
+  deleteMany?: Prisma.categoriasScalarWhereInput | Prisma.categoriasScalarWhereInput[]
+}
+
 export type categoriasCreateWithoutTransacoesInput = {
   nome: string
   tipo: $Enums.categorias_tipo
@@ -454,9 +544,11 @@ export type categoriasCreateWithoutTransacoesInput = {
   cor?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
+  usuarios?: Prisma.usuariosCreateNestedOneWithoutCategoriasInput
 }
 
 export type categoriasUncheckedCreateWithoutTransacoesInput = {
+  id_usuario?: number | null
   id_categoria?: number
   nome: string
   tipo: $Enums.categorias_tipo
@@ -489,9 +581,113 @@ export type categoriasUpdateWithoutTransacoesInput = {
   cor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  usuarios?: Prisma.usuariosUpdateOneWithoutCategoriasNestedInput
 }
 
 export type categoriasUncheckedUpdateWithoutTransacoesInput = {
+  id_usuario?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  id_categoria?: Prisma.IntFieldUpdateOperationsInput | number
+  nome?: Prisma.StringFieldUpdateOperationsInput | string
+  tipo?: Prisma.Enumcategorias_tipoFieldUpdateOperationsInput | $Enums.categorias_tipo
+  icone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+export type categoriasCreateWithoutUsuariosInput = {
+  nome: string
+  tipo: $Enums.categorias_tipo
+  icone?: string | null
+  cor?: string | null
+  created_at?: Date | string | null
+  updated_at?: Date | string | null
+  transacoes?: Prisma.transacoesCreateNestedManyWithoutCategoriasInput
+}
+
+export type categoriasUncheckedCreateWithoutUsuariosInput = {
+  id_categoria?: number
+  nome: string
+  tipo: $Enums.categorias_tipo
+  icone?: string | null
+  cor?: string | null
+  created_at?: Date | string | null
+  updated_at?: Date | string | null
+  transacoes?: Prisma.transacoesUncheckedCreateNestedManyWithoutCategoriasInput
+}
+
+export type categoriasCreateOrConnectWithoutUsuariosInput = {
+  where: Prisma.categoriasWhereUniqueInput
+  create: Prisma.XOR<Prisma.categoriasCreateWithoutUsuariosInput, Prisma.categoriasUncheckedCreateWithoutUsuariosInput>
+}
+
+export type categoriasCreateManyUsuariosInputEnvelope = {
+  data: Prisma.categoriasCreateManyUsuariosInput | Prisma.categoriasCreateManyUsuariosInput[]
+  skipDuplicates?: boolean
+}
+
+export type categoriasUpsertWithWhereUniqueWithoutUsuariosInput = {
+  where: Prisma.categoriasWhereUniqueInput
+  update: Prisma.XOR<Prisma.categoriasUpdateWithoutUsuariosInput, Prisma.categoriasUncheckedUpdateWithoutUsuariosInput>
+  create: Prisma.XOR<Prisma.categoriasCreateWithoutUsuariosInput, Prisma.categoriasUncheckedCreateWithoutUsuariosInput>
+}
+
+export type categoriasUpdateWithWhereUniqueWithoutUsuariosInput = {
+  where: Prisma.categoriasWhereUniqueInput
+  data: Prisma.XOR<Prisma.categoriasUpdateWithoutUsuariosInput, Prisma.categoriasUncheckedUpdateWithoutUsuariosInput>
+}
+
+export type categoriasUpdateManyWithWhereWithoutUsuariosInput = {
+  where: Prisma.categoriasScalarWhereInput
+  data: Prisma.XOR<Prisma.categoriasUpdateManyMutationInput, Prisma.categoriasUncheckedUpdateManyWithoutUsuariosInput>
+}
+
+export type categoriasScalarWhereInput = {
+  AND?: Prisma.categoriasScalarWhereInput | Prisma.categoriasScalarWhereInput[]
+  OR?: Prisma.categoriasScalarWhereInput[]
+  NOT?: Prisma.categoriasScalarWhereInput | Prisma.categoriasScalarWhereInput[]
+  id_usuario?: Prisma.IntNullableFilter<"categorias"> | number | null
+  id_categoria?: Prisma.IntFilter<"categorias"> | number
+  nome?: Prisma.StringFilter<"categorias"> | string
+  tipo?: Prisma.Enumcategorias_tipoFilter<"categorias"> | $Enums.categorias_tipo
+  icone?: Prisma.StringNullableFilter<"categorias"> | string | null
+  cor?: Prisma.StringNullableFilter<"categorias"> | string | null
+  created_at?: Prisma.DateTimeNullableFilter<"categorias"> | Date | string | null
+  updated_at?: Prisma.DateTimeNullableFilter<"categorias"> | Date | string | null
+}
+
+export type categoriasCreateManyUsuariosInput = {
+  id_categoria?: number
+  nome: string
+  tipo: $Enums.categorias_tipo
+  icone?: string | null
+  cor?: string | null
+  created_at?: Date | string | null
+  updated_at?: Date | string | null
+}
+
+export type categoriasUpdateWithoutUsuariosInput = {
+  nome?: Prisma.StringFieldUpdateOperationsInput | string
+  tipo?: Prisma.Enumcategorias_tipoFieldUpdateOperationsInput | $Enums.categorias_tipo
+  icone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  transacoes?: Prisma.transacoesUpdateManyWithoutCategoriasNestedInput
+}
+
+export type categoriasUncheckedUpdateWithoutUsuariosInput = {
+  id_categoria?: Prisma.IntFieldUpdateOperationsInput | number
+  nome?: Prisma.StringFieldUpdateOperationsInput | string
+  tipo?: Prisma.Enumcategorias_tipoFieldUpdateOperationsInput | $Enums.categorias_tipo
+  icone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  transacoes?: Prisma.transacoesUncheckedUpdateManyWithoutCategoriasNestedInput
+}
+
+export type categoriasUncheckedUpdateManyWithoutUsuariosInput = {
   id_categoria?: Prisma.IntFieldUpdateOperationsInput | number
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   tipo?: Prisma.Enumcategorias_tipoFieldUpdateOperationsInput | $Enums.categorias_tipo
@@ -533,6 +729,7 @@ export type CategoriasCountOutputTypeCountTransacoesArgs<ExtArgs extends runtime
 
 
 export type categoriasSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+  id_usuario?: boolean
   id_categoria?: boolean
   nome?: boolean
   tipo?: boolean
@@ -540,6 +737,7 @@ export type categoriasSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   cor?: boolean
   created_at?: boolean
   updated_at?: boolean
+  usuarios?: boolean | Prisma.categorias$usuariosArgs<ExtArgs>
   transacoes?: boolean | Prisma.categorias$transacoesArgs<ExtArgs>
   _count?: boolean | Prisma.CategoriasCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["categorias"]>
@@ -547,6 +745,7 @@ export type categoriasSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
 
 
 export type categoriasSelectScalar = {
+  id_usuario?: boolean
   id_categoria?: boolean
   nome?: boolean
   tipo?: boolean
@@ -556,8 +755,9 @@ export type categoriasSelectScalar = {
   updated_at?: boolean
 }
 
-export type categoriasOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id_categoria" | "nome" | "tipo" | "icone" | "cor" | "created_at" | "updated_at", ExtArgs["result"]["categorias"]>
+export type categoriasOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id_usuario" | "id_categoria" | "nome" | "tipo" | "icone" | "cor" | "created_at" | "updated_at", ExtArgs["result"]["categorias"]>
 export type categoriasInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  usuarios?: boolean | Prisma.categorias$usuariosArgs<ExtArgs>
   transacoes?: boolean | Prisma.categorias$transacoesArgs<ExtArgs>
   _count?: boolean | Prisma.CategoriasCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -565,9 +765,11 @@ export type categoriasInclude<ExtArgs extends runtime.Types.Extensions.InternalA
 export type $categoriasPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "categorias"
   objects: {
+    usuarios: Prisma.$usuariosPayload<ExtArgs> | null
     transacoes: Prisma.$transacoesPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
+    id_usuario: number | null
     id_categoria: number
     nome: string
     tipo: $Enums.categorias_tipo
@@ -658,8 +860,8 @@ export interface categoriasDelegate<ExtArgs extends runtime.Types.Extensions.Int
    * // Get first 10 Categorias
    * const categorias = await prisma.categorias.findMany({ take: 10 })
    * 
-   * // Only select the `id_categoria`
-   * const categoriasWithId_categoriaOnly = await prisma.categorias.findMany({ select: { id_categoria: true } })
+   * // Only select the `id_usuario`
+   * const categoriasWithId_usuarioOnly = await prisma.categorias.findMany({ select: { id_usuario: true } })
    * 
    */
   findMany<T extends categoriasFindManyArgs>(args?: Prisma.SelectSubset<T, categoriasFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$categoriasPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
@@ -915,6 +1117,7 @@ readonly fields: categoriasFieldRefs;
  */
 export interface Prisma__categoriasClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  usuarios<T extends Prisma.categorias$usuariosArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.categorias$usuariosArgs<ExtArgs>>): Prisma.Prisma__usuariosClient<runtime.Types.Result.GetResult<Prisma.$usuariosPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   transacoes<T extends Prisma.categorias$transacoesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.categorias$transacoesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$transacoesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -945,6 +1148,7 @@ export interface Prisma__categoriasClient<T, Null = never, ExtArgs extends runti
  * Fields of the categorias model
  */
 export interface categoriasFieldRefs {
+  readonly id_usuario: Prisma.FieldRef<"categorias", 'Int'>
   readonly id_categoria: Prisma.FieldRef<"categorias", 'Int'>
   readonly nome: Prisma.FieldRef<"categorias", 'String'>
   readonly tipo: Prisma.FieldRef<"categorias", 'categorias_tipo'>
@@ -1292,6 +1496,25 @@ export type categoriasDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.In
    * Limit how many categorias to delete.
    */
   limit?: number
+}
+
+/**
+ * categorias.usuarios
+ */
+export type categorias$usuariosArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the usuarios
+   */
+  select?: Prisma.usuariosSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the usuarios
+   */
+  omit?: Prisma.usuariosOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.usuariosInclude<ExtArgs> | null
+  where?: Prisma.usuariosWhereInput
 }
 
 /**

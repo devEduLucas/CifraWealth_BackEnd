@@ -9,14 +9,18 @@ datasource db {
 }
 
 model categorias {
+  id_usuario   Int?
+  usuarios     usuarios?       @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
   id_categoria Int             @id @default(autoincrement())
   nome         String          @db.VarChar(50)
   tipo         categorias_tipo
   icone        String?         @db.VarChar(50)
   cor          String?         @db.VarChar(20)
   created_at   DateTime?       @default(now()) @db.Timestamp(0)
-  updated_at   DateTime?       @default(now()) @db.Timestamp(0)
+  updated_at   DateTime?       @default(now()) @updatedAt @db.Timestamp(0)
   transacoes   transacoes[]
+
+  @@index([id_usuario], map: "idx_categorias_usuario")
 }
 
 model metas_financeiras {
@@ -30,7 +34,7 @@ model metas_financeiras {
   data_inicio    DateTime?                 @db.Date
   data_fim       DateTime?                 @db.Date
   created_at     DateTime?                 @default(now()) @db.Timestamp(0)
-  updated_at     DateTime?                 @default(now()) @db.Timestamp(0)
+  updated_at     DateTime?                 @default(now()) @updatedAt @db.Timestamp(0)
   usuarios       usuarios                  @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade, map: "metas_financeiras_ibfk_1")
 
   @@index([id_usuario], map: "idx_metas_usuario")
@@ -46,7 +50,7 @@ model transacoes {
   data_transacao DateTime           @db.Date
   status         transacoes_status? @default(confirmada)
   created_at     DateTime?          @default(now()) @db.Timestamp(0)
-  updated_at     DateTime?          @default(now()) @db.Timestamp(0)
+  updated_at     DateTime?          @default(now()) @updatedAt @db.Timestamp(0)
   categorias     categorias         @relation(fields: [id_categoria], references: [id_categoria], map: "fk_categoria")
   usuarios       usuarios           @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade, map: "transacoes_ibfk_2")
 
@@ -66,7 +70,8 @@ model usuarios {
   email_verificado  Boolean?            @default(false)
   ultimo_login      DateTime?           @db.DateTime(0)
   created_at        DateTime?           @default(now()) @db.Timestamp(0)
-  updated_at        DateTime?           @default(now()) @db.Timestamp(0)
+  updated_at        DateTime?           @default(now()) @updatedAt @db.Timestamp(0)
+  categorias        categorias[]
   metas_financeiras metas_financeiras[]
   transacoes        transacoes[]
 }

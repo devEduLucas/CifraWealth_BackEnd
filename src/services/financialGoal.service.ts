@@ -52,8 +52,8 @@ export const financialGoalService = {
       titulo: input.titulo,
       ...(input.descricao !== undefined && { descricao: input.descricao }),
       valor_objetivo: toDecimal(input.valor_objetivo),
-      ...(input.data_inicio !== undefined && { data_inicio: parseDateOnly(input.data_inicio) }),
-      ...(input.data_fim !== undefined && { data_fim: parseDateOnly(input.data_fim) }),
+      ...(input.data_inicio !== undefined && { data_inicio: input.data_inicio ? parseDateOnly(input.data_inicio) : null }),
+      ...(input.data_fim !== undefined && { data_fim: input.data_fim ? parseDateOnly(input.data_fim) : null }),
     });
 
     return toGoalResponse(goal);
@@ -62,36 +62,27 @@ export const financialGoalService = {
   async update(id: number, userId: number, input: UpdateGoalInput): Promise<GoalResponse> {
     await financialGoalService.getById(id, userId);
 
-    const goal = await financialGoalRepository.update(id, {
+    const goal = await financialGoalRepository.update(id, userId, {
       ...(input.titulo !== undefined && { titulo: input.titulo }),
       ...(input.descricao !== undefined && { descricao: input.descricao }),
       ...(input.valor_objetivo !== undefined && {
         valor_objetivo: toDecimal(input.valor_objetivo),
       }),
       ...(input.status !== undefined && { status: input.status }),
-      ...(input.data_inicio !== undefined && { data_inicio: parseDateOnly(input.data_inicio) }),
-      ...(input.data_fim !== undefined && { data_fim: parseDateOnly(input.data_fim) }),
+      ...(input.data_inicio !== undefined && { data_inicio: input.data_inicio ? parseDateOnly(input.data_inicio) : null }),
+      ...(input.data_fim !== undefined && { data_fim: input.data_fim ? parseDateOnly(input.data_fim) : null }),
     });
 
     return toGoalResponse(goal);
   },
 
   async contribute(id: number, userId: number, input: ContributeGoalInput): Promise<GoalResponse> {
-    const current = await financialGoalService.getById(id, userId);
-
-    const novoValorAtual = current.valor_atual + input.valor;
-    const atingiuObjetivo = novoValorAtual >= current.valor_objetivo;
-
-    const goal = await financialGoalRepository.update(id, {
-      valor_atual: toDecimal(novoValorAtual),
-      ...(atingiuObjetivo && current.status === "em_andamento" && { status: "concluida" }),
-    });
-
+    const goal = await financialGoalRepository.contribute(id, userId, toDecimal(input.valor));
     return toGoalResponse(goal);
   },
 
   async remove(id: number, userId: number): Promise<void> {
     await financialGoalService.getById(id, userId);
-    await financialGoalRepository.delete(id);
+    await financialGoalRepository.delete(id, userId);
   },
 };
