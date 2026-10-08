@@ -31,8 +31,8 @@ function toTransactionResponse(transaction: {
   };
 }
 
-async function ensureCategoryExists(id_categoria: number): Promise<void> {
-  const category = await categoryRepository.findById(id_categoria);
+async function ensureCategoryExists(id_categoria: number, userId: number): Promise<void> {
+  const category = await categoryRepository.findByIdAndUser(id_categoria, userId);
 
   if (!category) {
     throw new AppError("Categoria não encontrada.", 404);
@@ -63,7 +63,7 @@ export const transactionService = {
   },
 
   async create(userId: number, input: CreateTransactionInput): Promise<TransactionResponse> {
-    await ensureCategoryExists(input.id_categoria);
+    await ensureCategoryExists(input.id_categoria, userId);
 
     const transaction = await transactionRepository.create(userId, {
       id_categoria: input.id_categoria,
@@ -85,7 +85,7 @@ export const transactionService = {
     await transactionService.getById(id, userId);
 
     if (input.id_categoria !== undefined) {
-      await ensureCategoryExists(input.id_categoria);
+      await ensureCategoryExists(input.id_categoria, userId);
     }
 
     const transaction = await transactionRepository.update(id, {
