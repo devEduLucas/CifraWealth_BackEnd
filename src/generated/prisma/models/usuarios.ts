@@ -264,6 +264,7 @@ export type usuariosWhereInput = {
   ultimo_login?: Prisma.DateTimeNullableFilter<"usuarios"> | Date | string | null
   created_at?: Prisma.DateTimeNullableFilter<"usuarios"> | Date | string | null
   updated_at?: Prisma.DateTimeNullableFilter<"usuarios"> | Date | string | null
+  categorias?: Prisma.CategoriasListRelationFilter
   metas_financeiras?: Prisma.Metas_financeirasListRelationFilter
   transacoes?: Prisma.TransacoesListRelationFilter
 }
@@ -280,6 +281,7 @@ export type usuariosOrderByWithRelationInput = {
   ultimo_login?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrderInput | Prisma.SortOrder
   updated_at?: Prisma.SortOrderInput | Prisma.SortOrder
+  categorias?: Prisma.categoriasOrderByRelationAggregateInput
   metas_financeiras?: Prisma.metas_financeirasOrderByRelationAggregateInput
   transacoes?: Prisma.transacoesOrderByRelationAggregateInput
   _relevance?: Prisma.usuariosOrderByRelevanceInput
@@ -300,6 +302,7 @@ export type usuariosWhereUniqueInput = Prisma.AtLeast<{
   ultimo_login?: Prisma.DateTimeNullableFilter<"usuarios"> | Date | string | null
   created_at?: Prisma.DateTimeNullableFilter<"usuarios"> | Date | string | null
   updated_at?: Prisma.DateTimeNullableFilter<"usuarios"> | Date | string | null
+  categorias?: Prisma.CategoriasListRelationFilter
   metas_financeiras?: Prisma.Metas_financeirasListRelationFilter
   transacoes?: Prisma.TransacoesListRelationFilter
 }, "id_usuario" | "email" | "google_id">
@@ -351,6 +354,7 @@ export type usuariosCreateInput = {
   ultimo_login?: Date | string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
+  categorias?: Prisma.categoriasCreateNestedManyWithoutUsuariosInput
   metas_financeiras?: Prisma.metas_financeirasCreateNestedManyWithoutUsuariosInput
   transacoes?: Prisma.transacoesCreateNestedManyWithoutUsuariosInput
 }
@@ -367,6 +371,7 @@ export type usuariosUncheckedCreateInput = {
   ultimo_login?: Date | string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
+  categorias?: Prisma.categoriasUncheckedCreateNestedManyWithoutUsuariosInput
   metas_financeiras?: Prisma.metas_financeirasUncheckedCreateNestedManyWithoutUsuariosInput
   transacoes?: Prisma.transacoesUncheckedCreateNestedManyWithoutUsuariosInput
 }
@@ -382,6 +387,7 @@ export type usuariosUpdateInput = {
   ultimo_login?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  categorias?: Prisma.categoriasUpdateManyWithoutUsuariosNestedInput
   metas_financeiras?: Prisma.metas_financeirasUpdateManyWithoutUsuariosNestedInput
   transacoes?: Prisma.transacoesUpdateManyWithoutUsuariosNestedInput
 }
@@ -398,6 +404,7 @@ export type usuariosUncheckedUpdateInput = {
   ultimo_login?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  categorias?: Prisma.categoriasUncheckedUpdateManyWithoutUsuariosNestedInput
   metas_financeiras?: Prisma.metas_financeirasUncheckedUpdateManyWithoutUsuariosNestedInput
   transacoes?: Prisma.transacoesUncheckedUpdateManyWithoutUsuariosNestedInput
 }
@@ -504,6 +511,20 @@ export type usuariosSumOrderByAggregateInput = {
   id_usuario?: Prisma.SortOrder
 }
 
+export type usuariosCreateNestedOneWithoutCategoriasInput = {
+  create?: Prisma.XOR<Prisma.usuariosCreateWithoutCategoriasInput, Prisma.usuariosUncheckedCreateWithoutCategoriasInput>
+  connectOrCreate?: Prisma.usuariosCreateOrConnectWithoutCategoriasInput
+  connect?: Prisma.usuariosWhereUniqueInput
+}
+
+export type usuariosUpdateOneRequiredWithoutCategoriasNestedInput = {
+  create?: Prisma.XOR<Prisma.usuariosCreateWithoutCategoriasInput, Prisma.usuariosUncheckedCreateWithoutCategoriasInput>
+  connectOrCreate?: Prisma.usuariosCreateOrConnectWithoutCategoriasInput
+  upsert?: Prisma.usuariosUpsertWithoutCategoriasInput
+  connect?: Prisma.usuariosWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.usuariosUpdateToOneWithWhereWithoutCategoriasInput, Prisma.usuariosUpdateWithoutCategoriasInput>, Prisma.usuariosUncheckedUpdateWithoutCategoriasInput>
+}
+
 export type usuariosCreateNestedOneWithoutMetas_financeirasInput = {
   create?: Prisma.XOR<Prisma.usuariosCreateWithoutMetas_financeirasInput, Prisma.usuariosUncheckedCreateWithoutMetas_financeirasInput>
   connectOrCreate?: Prisma.usuariosCreateOrConnectWithoutMetas_financeirasInput
@@ -536,6 +557,84 @@ export type NullableBoolFieldUpdateOperationsInput = {
   set?: boolean | null
 }
 
+export type usuariosCreateWithoutCategoriasInput = {
+  nome: string
+  sobrenome?: string | null
+  email: string
+  senha?: string | null
+  google_id?: string | null
+  foto_perfil?: string | null
+  email_verificado?: boolean | null
+  ultimo_login?: Date | string | null
+  created_at?: Date | string | null
+  updated_at?: Date | string | null
+  metas_financeiras?: Prisma.metas_financeirasCreateNestedManyWithoutUsuariosInput
+  transacoes?: Prisma.transacoesCreateNestedManyWithoutUsuariosInput
+}
+
+export type usuariosUncheckedCreateWithoutCategoriasInput = {
+  id_usuario?: number
+  nome: string
+  sobrenome?: string | null
+  email: string
+  senha?: string | null
+  google_id?: string | null
+  foto_perfil?: string | null
+  email_verificado?: boolean | null
+  ultimo_login?: Date | string | null
+  created_at?: Date | string | null
+  updated_at?: Date | string | null
+  metas_financeiras?: Prisma.metas_financeirasUncheckedCreateNestedManyWithoutUsuariosInput
+  transacoes?: Prisma.transacoesUncheckedCreateNestedManyWithoutUsuariosInput
+}
+
+export type usuariosCreateOrConnectWithoutCategoriasInput = {
+  where: Prisma.usuariosWhereUniqueInput
+  create: Prisma.XOR<Prisma.usuariosCreateWithoutCategoriasInput, Prisma.usuariosUncheckedCreateWithoutCategoriasInput>
+}
+
+export type usuariosUpsertWithoutCategoriasInput = {
+  update: Prisma.XOR<Prisma.usuariosUpdateWithoutCategoriasInput, Prisma.usuariosUncheckedUpdateWithoutCategoriasInput>
+  create: Prisma.XOR<Prisma.usuariosCreateWithoutCategoriasInput, Prisma.usuariosUncheckedCreateWithoutCategoriasInput>
+  where?: Prisma.usuariosWhereInput
+}
+
+export type usuariosUpdateToOneWithWhereWithoutCategoriasInput = {
+  where?: Prisma.usuariosWhereInput
+  data: Prisma.XOR<Prisma.usuariosUpdateWithoutCategoriasInput, Prisma.usuariosUncheckedUpdateWithoutCategoriasInput>
+}
+
+export type usuariosUpdateWithoutCategoriasInput = {
+  nome?: Prisma.StringFieldUpdateOperationsInput | string
+  sobrenome?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  senha?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  google_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  foto_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email_verificado?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  ultimo_login?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  metas_financeiras?: Prisma.metas_financeirasUpdateManyWithoutUsuariosNestedInput
+  transacoes?: Prisma.transacoesUpdateManyWithoutUsuariosNestedInput
+}
+
+export type usuariosUncheckedUpdateWithoutCategoriasInput = {
+  id_usuario?: Prisma.IntFieldUpdateOperationsInput | number
+  nome?: Prisma.StringFieldUpdateOperationsInput | string
+  sobrenome?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  senha?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  google_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  foto_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email_verificado?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  ultimo_login?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  metas_financeiras?: Prisma.metas_financeirasUncheckedUpdateManyWithoutUsuariosNestedInput
+  transacoes?: Prisma.transacoesUncheckedUpdateManyWithoutUsuariosNestedInput
+}
+
 export type usuariosCreateWithoutMetas_financeirasInput = {
   nome: string
   sobrenome?: string | null
@@ -547,6 +646,7 @@ export type usuariosCreateWithoutMetas_financeirasInput = {
   ultimo_login?: Date | string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
+  categorias?: Prisma.categoriasCreateNestedManyWithoutUsuariosInput
   transacoes?: Prisma.transacoesCreateNestedManyWithoutUsuariosInput
 }
 
@@ -562,6 +662,7 @@ export type usuariosUncheckedCreateWithoutMetas_financeirasInput = {
   ultimo_login?: Date | string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
+  categorias?: Prisma.categoriasUncheckedCreateNestedManyWithoutUsuariosInput
   transacoes?: Prisma.transacoesUncheckedCreateNestedManyWithoutUsuariosInput
 }
 
@@ -592,6 +693,7 @@ export type usuariosUpdateWithoutMetas_financeirasInput = {
   ultimo_login?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  categorias?: Prisma.categoriasUpdateManyWithoutUsuariosNestedInput
   transacoes?: Prisma.transacoesUpdateManyWithoutUsuariosNestedInput
 }
 
@@ -607,6 +709,7 @@ export type usuariosUncheckedUpdateWithoutMetas_financeirasInput = {
   ultimo_login?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  categorias?: Prisma.categoriasUncheckedUpdateManyWithoutUsuariosNestedInput
   transacoes?: Prisma.transacoesUncheckedUpdateManyWithoutUsuariosNestedInput
 }
 
@@ -621,6 +724,7 @@ export type usuariosCreateWithoutTransacoesInput = {
   ultimo_login?: Date | string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
+  categorias?: Prisma.categoriasCreateNestedManyWithoutUsuariosInput
   metas_financeiras?: Prisma.metas_financeirasCreateNestedManyWithoutUsuariosInput
 }
 
@@ -636,6 +740,7 @@ export type usuariosUncheckedCreateWithoutTransacoesInput = {
   ultimo_login?: Date | string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
+  categorias?: Prisma.categoriasUncheckedCreateNestedManyWithoutUsuariosInput
   metas_financeiras?: Prisma.metas_financeirasUncheckedCreateNestedManyWithoutUsuariosInput
 }
 
@@ -666,6 +771,7 @@ export type usuariosUpdateWithoutTransacoesInput = {
   ultimo_login?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  categorias?: Prisma.categoriasUpdateManyWithoutUsuariosNestedInput
   metas_financeiras?: Prisma.metas_financeirasUpdateManyWithoutUsuariosNestedInput
 }
 
@@ -681,6 +787,7 @@ export type usuariosUncheckedUpdateWithoutTransacoesInput = {
   ultimo_login?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  categorias?: Prisma.categoriasUncheckedUpdateManyWithoutUsuariosNestedInput
   metas_financeiras?: Prisma.metas_financeirasUncheckedUpdateManyWithoutUsuariosNestedInput
 }
 
@@ -690,11 +797,13 @@ export type usuariosUncheckedUpdateWithoutTransacoesInput = {
  */
 
 export type UsuariosCountOutputType = {
+  categorias: number
   metas_financeiras: number
   transacoes: number
 }
 
 export type UsuariosCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  categorias?: boolean | UsuariosCountOutputTypeCountCategoriasArgs
   metas_financeiras?: boolean | UsuariosCountOutputTypeCountMetas_financeirasArgs
   transacoes?: boolean | UsuariosCountOutputTypeCountTransacoesArgs
 }
@@ -707,6 +816,13 @@ export type UsuariosCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Ext
    * Select specific fields to fetch from the UsuariosCountOutputType
    */
   select?: Prisma.UsuariosCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * UsuariosCountOutputType without action
+ */
+export type UsuariosCountOutputTypeCountCategoriasArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.categoriasWhereInput
 }
 
 /**
@@ -736,6 +852,7 @@ export type usuariosSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   ultimo_login?: boolean
   created_at?: boolean
   updated_at?: boolean
+  categorias?: boolean | Prisma.usuarios$categoriasArgs<ExtArgs>
   metas_financeiras?: boolean | Prisma.usuarios$metas_financeirasArgs<ExtArgs>
   transacoes?: boolean | Prisma.usuarios$transacoesArgs<ExtArgs>
   _count?: boolean | Prisma.UsuariosCountOutputTypeDefaultArgs<ExtArgs>
@@ -759,6 +876,7 @@ export type usuariosSelectScalar = {
 
 export type usuariosOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id_usuario" | "nome" | "sobrenome" | "email" | "senha" | "google_id" | "foto_perfil" | "email_verificado" | "ultimo_login" | "created_at" | "updated_at", ExtArgs["result"]["usuarios"]>
 export type usuariosInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  categorias?: boolean | Prisma.usuarios$categoriasArgs<ExtArgs>
   metas_financeiras?: boolean | Prisma.usuarios$metas_financeirasArgs<ExtArgs>
   transacoes?: boolean | Prisma.usuarios$transacoesArgs<ExtArgs>
   _count?: boolean | Prisma.UsuariosCountOutputTypeDefaultArgs<ExtArgs>
@@ -767,6 +885,7 @@ export type usuariosInclude<ExtArgs extends runtime.Types.Extensions.InternalArg
 export type $usuariosPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "usuarios"
   objects: {
+    categorias: Prisma.$categoriasPayload<ExtArgs>[]
     metas_financeiras: Prisma.$metas_financeirasPayload<ExtArgs>[]
     transacoes: Prisma.$transacoesPayload<ExtArgs>[]
   }
@@ -1122,6 +1241,7 @@ readonly fields: usuariosFieldRefs;
  */
 export interface Prisma__usuariosClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  categorias<T extends Prisma.usuarios$categoriasArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.usuarios$categoriasArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$categoriasPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   metas_financeiras<T extends Prisma.usuarios$metas_financeirasArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.usuarios$metas_financeirasArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$metas_financeirasPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   transacoes<T extends Prisma.usuarios$transacoesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.usuarios$transacoesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$transacoesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -1504,6 +1624,30 @@ export type usuariosDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Inte
    * Limit how many usuarios to delete.
    */
   limit?: number
+}
+
+/**
+ * usuarios.categorias
+ */
+export type usuarios$categoriasArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the categorias
+   */
+  select?: Prisma.categoriasSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the categorias
+   */
+  omit?: Prisma.categoriasOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.categoriasInclude<ExtArgs> | null
+  where?: Prisma.categoriasWhereInput
+  orderBy?: Prisma.categoriasOrderByWithRelationInput | Prisma.categoriasOrderByWithRelationInput[]
+  cursor?: Prisma.categoriasWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CategoriasScalarFieldEnum | Prisma.CategoriasScalarFieldEnum[]
 }
 
 /**

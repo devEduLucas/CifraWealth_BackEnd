@@ -10,13 +10,17 @@ datasource db {
 
 model categorias {
   id_categoria Int             @id @default(autoincrement())
+  id_usuario   Int
   nome         String          @db.VarChar(50)
   tipo         categorias_tipo
   icone        String?         @db.VarChar(50)
   cor          String?         @db.VarChar(20)
   created_at   DateTime?       @default(now()) @db.Timestamp(0)
   updated_at   DateTime?       @default(now()) @db.Timestamp(0)
+  usuarios     usuarios        @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade, map: "fk_categoria_usuario")
   transacoes   transacoes[]
+
+  @@index([id_usuario], map: "fk_categoria_usuario")
 }
 
 model metas_financeiras {
@@ -67,6 +71,7 @@ model usuarios {
   ultimo_login      DateTime?           @db.DateTime(0)
   created_at        DateTime?           @default(now()) @db.Timestamp(0)
   updated_at        DateTime?           @default(now()) @db.Timestamp(0)
+  categorias        categorias[]
   metas_financeiras metas_financeiras[]
   transacoes        transacoes[]
 }
