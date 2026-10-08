@@ -1,33 +1,94 @@
 import { categoryRepository } from "../repositories/category.repository.js";
 import { AppError } from "../utils/AppError.js";
-import type { categorias } from "../generated/prisma/client.js";
-import type { CategoryResponse, CreateCategoryInput, UpdateCategoryInput } from "../types/category.types.js";
+import type {
+  CategoryResponse,
+  CreateCategoryInput,
+  UpdateCategoryInput,
+} from "../types/category.types.js";
 
-function toCategoryResponse(category: categorias, userId: number): CategoryResponse & { editavel: boolean } {
-  return { id_categoria: category.id_categoria, nome: category.nome, tipo: category.tipo, icone: category.icone, cor: category.cor, editavel: category.id_usuario === userId };
+function toCategoryResponse(category: {
+  id_categoria: number;
+  nome: string;
+  tipo: string;
+  icone: string | null;
+  cor: string | null;
+}): CategoryResponse {
+  return {
+    id_categoria: category.id_categoria,
+    nome: category.nome,
+    tipo: category.tipo as CategoryResponse["tipo"],
+    icone: category.icone,
+    cor: category.cor,
+  };
 }
-async function accessible(id: number, userId: number): Promise<categorias> {
-  const category = await categoryRepository.findById(id, userId);
-  if (!category) throw new AppError("Categoria não encontrada.", 404);
-  return category;
+
+async function ensureNameAvailable(
+  userId: number,
+  nome: string,
+  tipo: "receita" | "despesa",
+  ignoreId?: number
+): Promise<void> {
+  const existing = await categoryRepository.findByNameAndType(userId, nome, tipo);
+  if (existing && existing.id_categoria !== ignoreId) {
+    throw new AppError("Você já possui uma categoria com esse nome.", 409);
+  }
 }
-async function owned(id: number, userId: number): Promise<categorias> {
-  const category = await accessible(id, userId);
-  if (category.id_usuario !== userId) throw new AppError("Categorias compartilhadas são somente leitura.", 403);
-  return category;
-}
+
 export const categoryService = {
-  async list(userId: number) { return (await categoryRepository.findAll(userId)).map((item) => toCategoryResponse(item, userId)); },
-  async getById(id: number, userId: number) { return toCategoryResponse(await accessible(id, userId), userId); },
-  async create(userId: number, input: CreateCategoryInput) { return toCategoryResponse(await categoryRepository.create(userId, input), userId); },
-  async update(id: number, userId: number, input: UpdateCategoryInput) {
-    const category = await owned(id, userId);
-    if (input.tipo && input.tipo !== category.tipo && await categoryRepository.countTransactions(id) > 0) throw new AppError("Não altere o tipo de uma categoria que possui transações.", 409);
-    return toCategoryResponse(await categoryRepository.update(id, userId, input), userId);
+  async list(userId: number): Promise<CategoryResponse[]> {
+    return (await categoryRepository.findAllByUser(userId)).map(toCategoryResponse);
   },
+
+  async getById(id: number, userId: number): Promise<CategoryResponse> {
+    const category = await categoryRepository.findByIdAndUser(id, userId);
+    if (!category) throw new AppError("Categoria não encontrada.", 404);
+    return toCategoryResponse(category);
+  },
+
+  async create(userId: number, input: CreateCategoryInput): Promise<CategoryResponse> {
+    await ensureNameAvailable(userId, input.nome, input.tipo);
+    return toCategoryResponse(await categoryRepository.create(userId, input));
+  },
+
+  async update(
+    id: number,
+    userId: number,
+    input: UpdateCategoryInput
+  ): Promise<CategoryResponse> {
+    const current = await categoryRepository.findByIdAndUser(id, userId);
+    if (!current) throw new AppError("Categoria não encontrada.", 404);
+
+    const nome = input.nome ?? current.nome;
+    const tipo = input.tipo ?? current.tipo;
+
+    if (input.tipo !== undefined && input.tipo !== current.tipo) {
+      const transactionsCount = await categoryRepository.countTransactions(id);
+      if (transactionsCount > 0) {
+        throw new AppError(
+          "Não é possível alterar o tipo de uma categoria que possui transações.",
+          409
+        );
+      }
+    }
+
+    if (input.nome !== undefined || input.tipo !== undefined) {
+      await ensureNameAvailable(userId, nome, tipo, id);
+    }
+
+    return toCategoryResponse(await categoryRepository.update(id, userId, input));
+  },
+
   async remove(id: number, userId: number): Promise<void> {
-    await owned(id, userId);
-    if (await categoryRepository.countTransactions(id) > 0) throw new AppError("Categoria possui transações. Remova ou recategorize as transações antes de excluí-la.", 409);
+    const category = await categoryRepository.findByIdAndUser(id, userId);
+    if (!category) throw new AppError("Categoria não encontrada.", 404);
+
+    if ((await categoryRepository.countTransactions(id)) > 0) {
+      throw new AppError(
+        "Não é possível excluir uma categoria que possui transações. Altere ou exclua as transações primeiro.",
+        409
+      );
+    }
+
     await categoryRepository.delete(id, userId);
   },
 };

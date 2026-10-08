@@ -9,15 +9,15 @@ datasource db {
 }
 
 model categorias {
-  id_usuario   Int?
-  usuarios     usuarios?       @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
   id_categoria Int             @id @default(autoincrement())
+  id_usuario   Int
   nome         String          @db.VarChar(50)
   tipo         categorias_tipo
   icone        String?         @db.VarChar(50)
   cor          String?         @db.VarChar(20)
   created_at   DateTime?       @default(now()) @db.Timestamp(0)
   updated_at   DateTime?       @default(now()) @updatedAt @db.Timestamp(0)
+  usuarios     usuarios        @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade, map: "categorias_id_usuario_fkey")
   transacoes   transacoes[]
 
   @@index([id_usuario], map: "idx_categorias_usuario")

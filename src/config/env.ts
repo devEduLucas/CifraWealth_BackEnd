@@ -8,7 +8,7 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(1, "JWT_SECRET é obrigatória."),
   JWT_EXPIRES_IN: z.string().default("1d"),
   CORS_ORIGIN: z.string().min(1, "CORS_ORIGIN é obrigatória."),
-  GOOGLE_CLIENT_ID: z.string().min(1, "GOOGLE_CLIENT_ID é obrigatória."),
+  GOOGLE_CLIENT_ID: z.string().optional(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

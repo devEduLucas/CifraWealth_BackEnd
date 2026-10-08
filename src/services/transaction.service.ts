@@ -31,13 +31,16 @@ function toTransactionResponse(transaction: {
   };
 }
 
-async function ensureCategoryExists(id_categoria: number, userId: number, tipo: "receita" | "despesa"): Promise<void> {
-  const category = await categoryRepository.findById(id_categoria, userId);
-
-  if (!category) {
-    throw new AppError("Categoria não encontrada.", 404);
+async function ensureCategoryExists(
+  id_categoria: number,
+  userId: number,
+  tipo: "receita" | "despesa"
+): Promise<void> {
+  const category = await categoryRepository.findByIdAndUser(id_categoria, userId);
+  if (!category) throw new AppError("Categoria não encontrada.", 404);
+  if (category.tipo !== tipo) {
+    throw new AppError("O tipo da categoria deve corresponder ao tipo da transação.", 400);
   }
-  if (category.tipo !== tipo) throw new AppError("O tipo da categoria deve corresponder ao tipo da transação.", 400);
 }
 
 export const transactionService = {
@@ -48,24 +51,18 @@ export const transactionService = {
       ...(query.data_inicio !== undefined && { data_inicio: parseDateOnly(query.data_inicio) }),
       ...(query.data_fim !== undefined && { data_fim: parseDateOnly(query.data_fim) }),
     };
-
     const transactions = await transactionRepository.findAllByUser(userId, filters);
     return transactions.map(toTransactionResponse);
   },
 
   async getById(id: number, userId: number): Promise<TransactionResponse> {
     const transaction = await transactionRepository.findByIdAndUser(id, userId);
-
-    if (!transaction) {
-      throw new AppError("Transação não encontrada.", 404);
-    }
-
+    if (!transaction) throw new AppError("Transação não encontrada.", 404);
     return toTransactionResponse(transaction);
   },
 
   async create(userId: number, input: CreateTransactionInput): Promise<TransactionResponse> {
     await ensureCategoryExists(input.id_categoria, userId, input.tipo);
-
     const transaction = await transactionRepository.create(userId, {
       id_categoria: input.id_categoria,
       valor: toDecimal(input.valor),
@@ -74,7 +71,6 @@ export const transactionService = {
       data_transacao: parseDateOnly(input.data_transacao),
       ...(input.status !== undefined && { status: input.status }),
     });
-
     return toTransactionResponse(transaction);
   },
 
@@ -91,12 +87,9 @@ export const transactionService = {
       ...(input.valor !== undefined && { valor: toDecimal(input.valor) }),
       ...(input.tipo !== undefined && { tipo: input.tipo }),
       ...(input.descricao !== undefined && { descricao: input.descricao }),
-      ...(input.data_transacao !== undefined && {
-        data_transacao: parseDateOnly(input.data_transacao),
-      }),
+      ...(input.data_transacao !== undefined && { data_transacao: parseDateOnly(input.data_transacao) }),
       ...(input.status !== undefined && { status: input.status }),
     });
-
     return toTransactionResponse(transaction);
   },
 

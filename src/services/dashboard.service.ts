@@ -15,11 +15,10 @@ export const dashboardService = {
     const [totals, breakdown, categories] = await Promise.all([
       dashboardRepository.sumByTipo(userId, filters),
       dashboardRepository.sumByCategoria(userId, filters),
-      categoryRepository.findAll(userId),
+      categoryRepository.findAllByUser(userId),
     ]);
 
     const categoriesById = new Map(categories.map((category) => [category.id_categoria, category]));
-
     const total_receitas = toMoneyNumber(totals.receitas);
     const total_despesas = toMoneyNumber(totals.despesas);
 

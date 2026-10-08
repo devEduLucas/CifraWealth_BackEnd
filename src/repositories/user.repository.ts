@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 import type { usuarios } from "../generated/prisma/client.js";
+import { DEFAULT_CATEGORIES } from "../utils/defaultCategories.js";
 
 export interface CreateUserData {
   nome: string;
@@ -26,11 +27,15 @@ export const userRepository = {
   },
 
   create(data: CreateUserData): Promise<usuarios> {
-    return prisma.usuarios.create({ data });
+    return prisma.usuarios.create({
+      data: { ...data, categorias: { create: DEFAULT_CATEGORIES } },
+    });
   },
 
   createWithGoogle(data: CreateGoogleUserData): Promise<usuarios> {
-    return prisma.usuarios.create({ data });
+    return prisma.usuarios.create({
+      data: { ...data, categorias: { create: DEFAULT_CATEGORIES } },
+    });
   },
 
   linkGoogleId(userId: number, googleId: string): Promise<usuarios> {
