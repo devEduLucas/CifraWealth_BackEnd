@@ -35,6 +35,10 @@ export const authService = {
   },
 
   async google(input: GoogleLoginInput): Promise<AuthResponse> {
+    if (!env.GOOGLE_CLIENT_ID) {
+      throw new AppError("Login com Google não está configurado.", 503);
+    }
+
     const ticket = await googleClient.verifyIdToken({
       idToken: input.idToken,
       audience: env.GOOGLE_CLIENT_ID,

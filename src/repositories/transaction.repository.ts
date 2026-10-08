@@ -61,6 +61,7 @@ export const transactionRepository = {
 
   update(
     id: number,
+    userId: number,
     data: {
       id_categoria?: number;
       valor?: Prisma.Decimal;
@@ -71,7 +72,7 @@ export const transactionRepository = {
     }
   ): Promise<transacoes> {
     return prisma.transacoes.update({
-      where: { id_transacao: id },
+      where: { id_transacao: id, id_usuario: userId },
       data: {
         ...(data.id_categoria !== undefined && { id_categoria: data.id_categoria }),
         ...(data.valor !== undefined && { valor: data.valor }),
@@ -83,7 +84,7 @@ export const transactionRepository = {
     });
   },
 
-  delete(id: number): Promise<transacoes> {
-    return prisma.transacoes.delete({ where: { id_transacao: id } });
+  delete(id: number, userId: number): Promise<transacoes> {
+    return prisma.transacoes.delete({ where: { id_transacao: id, id_usuario: userId } });
   },
 };

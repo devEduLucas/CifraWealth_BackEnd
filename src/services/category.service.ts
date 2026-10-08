@@ -29,7 +29,6 @@ async function ensureNameAvailable(
   ignoreId?: number
 ): Promise<void> {
   const existing = await categoryRepository.findByNameAndType(userId, nome, tipo);
-
   if (existing && existing.id_categoria !== ignoreId) {
     throw new AppError("Você já possui uma categoria com esse nome.", 409);
   }
@@ -37,25 +36,18 @@ async function ensureNameAvailable(
 
 export const categoryService = {
   async list(userId: number): Promise<CategoryResponse[]> {
-    const categories = await categoryRepository.findAllByUser(userId);
-    return categories.map(toCategoryResponse);
+    return (await categoryRepository.findAllByUser(userId)).map(toCategoryResponse);
   },
 
   async getById(id: number, userId: number): Promise<CategoryResponse> {
     const category = await categoryRepository.findByIdAndUser(id, userId);
-
-    if (!category) {
-      throw new AppError("Categoria não encontrada.", 404);
-    }
-
+    if (!category) throw new AppError("Categoria não encontrada.", 404);
     return toCategoryResponse(category);
   },
 
   async create(userId: number, input: CreateCategoryInput): Promise<CategoryResponse> {
     await ensureNameAvailable(userId, input.nome, input.tipo);
-
-    const category = await categoryRepository.create(userId, input);
-    return toCategoryResponse(category);
+    return toCategoryResponse(await categoryRepository.create(userId, input));
   },
 
   async update(
@@ -63,14 +55,14 @@ export const categoryService = {
     userId: number,
     input: UpdateCategoryInput
   ): Promise<CategoryResponse> {
-    const current = await categoryService.getById(id, userId);
+    const current = await categoryRepository.findByIdAndUser(id, userId);
+    if (!current) throw new AppError("Categoria não encontrada.", 404);
 
     const nome = input.nome ?? current.nome;
     const tipo = input.tipo ?? current.tipo;
 
     if (input.tipo !== undefined && input.tipo !== current.tipo) {
       const transactionsCount = await categoryRepository.countTransactions(id);
-
       if (transactionsCount > 0) {
         throw new AppError(
           "Não é possível alterar o tipo de uma categoria que possui transações.",
@@ -83,22 +75,20 @@ export const categoryService = {
       await ensureNameAvailable(userId, nome, tipo, id);
     }
 
-    const category = await categoryRepository.update(id, input);
-    return toCategoryResponse(category);
+    return toCategoryResponse(await categoryRepository.update(id, userId, input));
   },
 
   async remove(id: number, userId: number): Promise<void> {
-    await categoryService.getById(id, userId);
+    const category = await categoryRepository.findByIdAndUser(id, userId);
+    if (!category) throw new AppError("Categoria não encontrada.", 404);
 
-    const transactionsCount = await categoryRepository.countTransactions(id);
-
-    if (transactionsCount > 0) {
+    if ((await categoryRepository.countTransactions(id)) > 0) {
       throw new AppError(
         "Não é possível excluir uma categoria que possui transações. Altere ou exclua as transações primeiro.",
         409
       );
     }
 
-    await categoryRepository.delete(id);
+    await categoryRepository.delete(id, userId);
   },
 };

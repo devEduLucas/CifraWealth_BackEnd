@@ -38,9 +38,9 @@ export const categoryRepository = {
     });
   },
 
-  update(id: number, data: UpdateCategoryInput): Promise<categorias> {
+  update(id: number, userId: number, data: UpdateCategoryInput): Promise<categorias> {
     return prisma.categorias.update({
-      where: { id_categoria: id },
+      where: { id_categoria: id, id_usuario: userId },
       data: {
         ...(data.nome !== undefined && { nome: data.nome }),
         ...(data.tipo !== undefined && { tipo: data.tipo }),
@@ -50,7 +50,7 @@ export const categoryRepository = {
     });
   },
 
-  delete(id: number): Promise<categorias> {
-    return prisma.categorias.delete({ where: { id_categoria: id } });
+  delete(id: number, userId: number): Promise<categorias> {
+    return prisma.categorias.delete({ where: { id_categoria: id, id_usuario: userId } });
   },
 };

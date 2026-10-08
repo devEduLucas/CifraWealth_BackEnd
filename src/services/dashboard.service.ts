@@ -19,7 +19,6 @@ export const dashboardService = {
     ]);
 
     const categoriesById = new Map(categories.map((category) => [category.id_categoria, category]));
-
     const total_receitas = toMoneyNumber(totals.receitas);
     const total_despesas = toMoneyNumber(totals.despesas);
 
