@@ -2,6 +2,7 @@ import { z } from "zod";
 import { dateOnlySchema, datesInOrder, moneySchema } from "../utils/validationSchemas.js";
 
 export const goalStatusSchema = z.enum(["em_andamento", "concluida", "cancelada"]);
+
 const goalFields = z.object({
   titulo: z.string().trim().min(1, "Título é obrigatório.").max(100),
   descricao: z.string().trim().max(255).nullable().optional(),
@@ -9,12 +10,23 @@ const goalFields = z.object({
   data_inicio: dateOnlySchema.nullable().optional(),
   data_fim: dateOnlySchema.nullable().optional(),
 });
+
 export const createGoalSchema = goalFields.refine(datesInOrder, "Prazo deve ser igual ou posterior à data de início.");
-export const updateGoalSchema = goalFields.partial().extend({ status: goalStatusSchema.optional() }).refine(datesInOrder, "Prazo deve ser igual ou posterior à data de início.");
+
+export const updateGoalSchema = goalFields
+  .partial()
+  .extend({
+    valor_atual: z.number().finite().min(0, "Valor atual não pode ser negativo.").max(99999999.99, "Valor máximo excedido.").optional(),
+    status: goalStatusSchema.optional(),
+  })
+  .refine(datesInOrder, "Prazo deve ser igual ou posterior à data de início.");
+
 export const contributeGoalSchema = z.object({ valor: moneySchema });
+
 export type CreateGoalInput = z.infer<typeof createGoalSchema>;
 export type UpdateGoalInput = z.infer<typeof updateGoalSchema>;
 export type ContributeGoalInput = z.infer<typeof contributeGoalSchema>;
+
 export interface GoalResponse {
   id_meta: number;
   titulo: string;

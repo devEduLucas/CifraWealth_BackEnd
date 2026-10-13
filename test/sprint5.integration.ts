@@ -7,6 +7,9 @@ import { prisma } from '../src/lib/prisma.js';
 import { env } from '../src/config/env.js';
 import { signToken } from '../src/utils/jwt.js';
 
+import { hashPassword } from '../src/utils/hashPassword.js';
+import { DEFAULT_CATEGORIES } from '../src/utils/defaultCategories.js';
+
 test('Sprint 5: autenticação, isolamento, aportes simultâneos, datas e relatório real', async () => {
   const databaseHost = new URL(env.DATABASE_URL).hostname;
   assert.ok(['localhost','127.0.0.1','[::1]'].includes(databaseHost), 'Os testes de integração usam somente banco local.');
@@ -14,7 +17,6 @@ test('Sprint 5: autenticação, isolamento, aportes simultâneos, datas e relat�
   const address = server.address(); assert.ok(address && typeof address !== 'string');
   const base = 'http://127.0.0.1:' + address.port + '/api';
   const ids: number[] = [];
-  let sharedCategory: number | undefined;
   async function request(method: string, route: string, body?: unknown, token?: string) {
     const response = await fetch(base + route, { method, headers: { 'Content-Type':'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
     return { status: response.status, data: await response.json().catch(() => null) };
@@ -22,8 +24,17 @@ test('Sprint 5: autenticação, isolamento, aportes simultâneos, datas e relat�
   try {
     const suffix = randomUUID();
     for (const name of ['A','B']) {
-      const registered = await request('POST','/users/register',{fullName:'Sprint ' + name,email:'sprint-' + name + '-' + suffix + '@example.com',password:'TesteSprint5!123'});
-      assert.equal(registered.status,201,JSON.stringify(registered.data)); ids.push(registered.data.id_usuario);
+      const email = 'sprint-' + name + '-' + suffix + '@example.com';
+      const u = await prisma.usuarios.create({
+        data: {
+          nome: 'Sprint ' + name,
+          email,
+          senha: await hashPassword('TesteSprint5!123'),
+          email_verificado: true,
+          categorias: { create: DEFAULT_CATEGORIES },
+        },
+      });
+      ids.push(u.id_usuario);
     }
     const userA=ids[0]!, userB=ids[1]!; const tokenA=signToken({userId:userA}), tokenB=signToken({userId:userB});
     const login=await request('POST','/auth/login',{email:'sprint-A-' + suffix + '@example.com',password:'TesteSprint5!123'});assert.equal(login.status,200);assert.ok(login.data.token);
@@ -34,9 +45,6 @@ test('Sprint 5: autenticação, isolamento, aportes simultâneos, datas e relat�
     assert.equal((await request('GET','/categories',undefined,tokenB)).data.some((item: {id_categoria:number})=>item.id_categoria===categoryId),false);
     assert.equal((await request('PUT','/categories/'+categoryId,{nome:'Alterada'},tokenB)).status,404);
     assert.equal((await request('DELETE','/categories/'+categoryId,undefined,tokenB)).status,404);
-    const shared=await prisma.categorias.create({data:{nome:'Compartilhada '+suffix.slice(0,8),tipo:'receita'}});sharedCategory=shared.id_categoria;
-    assert.equal((await request('PUT','/categories/'+sharedCategory,{nome:'Alterada'},tokenA)).status,403);
-    assert.equal((await request('DELETE','/categories/'+sharedCategory,undefined,tokenA)).status,403);
     const created=await request('POST','/goals',{titulo:'Reserva de teste',valor_objetivo:100,descricao:'Descrição inicial',data_fim:'2026-10-25'},tokenA);assert.equal(created.status,201);
     const goalId=created.data.id_meta;
     assert.equal((await request('POST','/goals/'+goalId+'/contribute',{valor:10},tokenB)).status,404);

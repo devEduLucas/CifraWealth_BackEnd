@@ -3,7 +3,10 @@ import { z } from "zod";
 export const registerUserSchema = z.object({
   fullName: z.string().trim().min(3, "Nome completo deve ter no mínimo 3 caracteres."),
   email: z.string().trim().toLowerCase().email("E-mail inválido."),
-  password: z.string().min(8, "A senha deve ter no mínimo 8 caracteres."),
+  password: z
+    .string()
+    .min(8, "A senha deve ter no mínimo 8 caracteres.")
+    .refine((val) => Buffer.byteLength(val, "utf8") <= 72, "A senha não pode exceder 72 bytes."),
 });
 
 export type RegisterUserInput = z.infer<typeof registerUserSchema>;

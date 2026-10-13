@@ -68,6 +68,9 @@ export const financialGoalService = {
       ...(input.valor_objetivo !== undefined && {
         valor_objetivo: toDecimal(input.valor_objetivo),
       }),
+      ...(input.valor_atual !== undefined && {
+        valor_atual: toDecimal(input.valor_atual),
+      }),
       ...(input.status !== undefined && { status: input.status }),
       ...(input.data_inicio !== undefined && { data_inicio: input.data_inicio ? parseDateOnly(input.data_inicio) : null }),
       ...(input.data_fim !== undefined && { data_fim: input.data_fim ? parseDateOnly(input.data_fim) : null }),

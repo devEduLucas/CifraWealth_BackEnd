@@ -6,8 +6,7 @@ import { AppError } from "../utils/AppError.js";
 // Every balance/target change takes the same row lock. Concurrent deposits cannot overwrite each other.
 async function changeLocked(id: number, userId: number, change: (current: metas_financeiras) => Prisma.metas_financeirasUpdateInput): Promise<metas_financeiras> {
   return prisma.$transaction(async (tx) => {
-    const rows = await tx.$queryRaw<Array<{ id_meta: number }>>
-      `SELECT id_meta FROM metas_financeiras WHERE id_meta = ${id} AND id_usuario = ${userId} FOR UPDATE`;
+    const rows = await tx.$queryRaw<Array<{ id_meta: number }>>`SELECT id_meta FROM metas_financeiras WHERE id_meta = ${id} AND id_usuario = ${userId} FOR UPDATE`;
     if (rows.length === 0) throw new AppError("Meta financeira não encontrada.", 404);
     const current = await tx.metas_financeiras.findUniqueOrThrow({ where: { id_meta: id } });
     return tx.metas_financeiras.update({ where: { id_meta: id, id_usuario: userId }, data: change(current) });
@@ -24,13 +23,14 @@ export const financialGoalRepository = {
   create(userId: number, data: { titulo: string; descricao?: string | null; valor_objetivo: Prisma.Decimal; data_inicio?: Date | null; data_fim?: Date | null }): Promise<metas_financeiras> {
     return prisma.metas_financeiras.create({ data: { ...data, id_usuario: userId } });
   },
-  update(id: number, userId: number, data: { titulo?: string; descricao?: string | null; valor_objetivo?: Prisma.Decimal; status?: "em_andamento" | "concluida" | "cancelada"; data_inicio?: Date | null; data_fim?: Date | null }): Promise<metas_financeiras> {
+  update(id: number, userId: number, data: { titulo?: string; descricao?: string | null; valor_objetivo?: Prisma.Decimal; valor_atual?: Prisma.Decimal; status?: "em_andamento" | "concluida" | "cancelada"; data_inicio?: Date | null; data_fim?: Date | null }): Promise<metas_financeiras> {
     return changeLocked(id, userId, (current) => {
       const start = data.data_inicio === undefined ? current.data_inicio : data.data_inicio;
       const end = data.data_fim === undefined ? current.data_fim : data.data_fim;
       if (start && end && start > end) throw new AppError("Prazo deve ser igual ou posterior à data de início.", 400);
       const target = data.valor_objetivo ?? current.valor_objetivo;
-      const reached = (current.valor_atual ?? new Prisma.Decimal(0)).gte(target);
+      const currentVal = data.valor_atual ?? current.valor_atual ?? new Prisma.Decimal(0);
+      const reached = currentVal.gte(target);
       const requestedStatus = data.status ?? current.status ?? "em_andamento";
       if (data.status === "concluida" && !reached) throw new AppError("Registre o valor guardado antes de concluir a meta.", 400);
       const status = requestedStatus === "cancelada" ? "cancelada" : reached ? "concluida" : "em_andamento";
