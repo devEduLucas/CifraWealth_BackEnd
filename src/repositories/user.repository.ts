@@ -22,26 +22,48 @@ export const userRepository = {
     return prisma.usuarios.findUnique({ where: { email } });
   },
 
+  findById(userId: number): Promise<usuarios | null> {
+    return prisma.usuarios.findUnique({ where: { id_usuario: userId } });
+  },
+
   findByGoogleId(googleId: string): Promise<usuarios | null> {
     return prisma.usuarios.findUnique({ where: { google_id: googleId } });
   },
 
   create(data: CreateUserData): Promise<usuarios> {
     return prisma.usuarios.create({
-      data: { ...data, categorias: { create: DEFAULT_CATEGORIES } },
+      data: { ...data, email_verificado: false, categorias: { create: DEFAULT_CATEGORIES } },
     });
   },
 
   createWithGoogle(data: CreateGoogleUserData): Promise<usuarios> {
     return prisma.usuarios.create({
-      data: { ...data, categorias: { create: DEFAULT_CATEGORIES } },
+      data: { ...data, email_verificado: true, categorias: { create: DEFAULT_CATEGORIES } },
     });
   },
 
   linkGoogleId(userId: number, googleId: string): Promise<usuarios> {
     return prisma.usuarios.update({
       where: { id_usuario: userId },
-      data: { google_id: googleId },
+      data: { google_id: googleId, email_verificado: true },
+    });
+  },
+
+  markEmailVerified(userId: number): Promise<usuarios> {
+    return prisma.usuarios.update({
+      where: { id_usuario: userId },
+      data: { email_verificado: true },
+    });
+  },
+
+  deleteById(userId: number): Promise<usuarios> {
+    return prisma.usuarios.delete({ where: { id_usuario: userId } });
+  },
+
+  touchUpdatedAt(userId: number): Promise<usuarios> {
+    return prisma.usuarios.update({
+      where: { id_usuario: userId },
+      data: { updated_at: new Date() },
     });
   },
 };
