@@ -8,6 +8,18 @@ export const registerUserSchema = z.object({
 
 export type RegisterUserInput = z.infer<typeof registerUserSchema>;
 
+export const verifyEmailSchema = z.object({
+  token: z.string().min(1, "Token de confirmação é obrigatório."),
+});
+
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
+
+export const resendVerificationSchema = z.object({
+  email: z.string().trim().toLowerCase().email("E-mail inválido."),
+});
+
+export type ResendVerificationInput = z.infer<typeof resendVerificationSchema>;
+
 export const loginUserSchema = z.object({
   email: z.string().trim().toLowerCase().email("E-mail inválido."),
   password: z.string().min(1, "Informe a senha."),

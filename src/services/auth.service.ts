@@ -29,6 +29,10 @@ export const authService = {
       throw new AppError("E-mail ou senha inválidos.", 401);
     }
 
+    if (user.email_verificado !== true) {
+      throw new AppError("Confirme seu e-mail pelo link enviado à sua caixa de entrada antes de entrar.", 403);
+    }
+
     const token = signToken({ userId: user.id_usuario });
 
     return { user: toUserResponse(user), token };
@@ -46,8 +50,8 @@ export const authService = {
 
     const payload = ticket.getPayload();
 
-    if (!payload?.email) {
-      throw new AppError("Token do Google inválido.", 401);
+    if (!payload?.email || payload.email_verified !== true) {
+      throw new AppError("O Google precisa confirmar que este e-mail é seu para continuar.", 401);
     }
 
     const googleId = payload.sub;
