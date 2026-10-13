@@ -40,7 +40,21 @@ export const userService = {
     const existingUser = await userRepository.findByEmail(input.email);
 
     if (existingUser) {
-      throw new AppError("E-mail já cadastrado.", 409);
+      if (existingUser.email_verificado === true) {
+        throw new AppError("E-mail já cadastrado.", 409);
+      }
+
+      const lastUpdate = existingUser.updated_at ?? existingUser.created_at;
+      if (!lastUpdate || Date.now() - lastUpdate.getTime() >= RESEND_COOLDOWN_MS) {
+        const token = createEmailVerificationToken(existingUser.id_usuario);
+        await sendVerificationEmail(existingUser.email, token);
+        await userRepository.touchUpdatedAt(existingUser.id_usuario);
+      }
+
+      return {
+        email: existingUser.email,
+        message: "Já existe um cadastro pendente para este e-mail. Um link de confirmação foi enviado à sua caixa de entrada.",
+      };
     }
 
     const { nome, sobrenome } = splitFullName(input.fullName);

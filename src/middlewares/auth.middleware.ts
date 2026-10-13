@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { AppError } from "../utils/AppError.js";
 import { verifyToken } from "../utils/jwt.js";
+import { userRepository } from "../repositories/user.repository.js";
 
 declare global {
   namespace Express {
@@ -10,7 +11,7 @@ declare global {
   }
 }
 
-export function authMiddleware(req: Request, _res: Response, next: NextFunction): void {
+export async function authMiddleware(req: Request, _res: Response, next: NextFunction): Promise<void> {
   const authHeader = req.headers.authorization;
 
   if (!authHeader?.startsWith("Bearer ")) {
@@ -22,6 +23,11 @@ export function authMiddleware(req: Request, _res: Response, next: NextFunction)
 
   try {
     const payload = verifyToken(token);
+    const user = await userRepository.findById(payload.userId);
+    if (!user) {
+      next(new AppError("Usuário não encontrado ou inativo.", 401));
+      return;
+    }
     req.userId = payload.userId;
     next();
   } catch {

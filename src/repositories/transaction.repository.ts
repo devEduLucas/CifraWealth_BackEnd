@@ -7,6 +7,9 @@ export interface TransactionFilters {
   id_categoria?: number;
   data_inicio?: Date;
   data_fim?: Date;
+  status?: "confirmada" | "pendente";
+  limit?: number;
+  page?: number;
 }
 
 function buildWhere(userId: number, filters: TransactionFilters): Prisma.transacoesWhereInput {
@@ -14,6 +17,7 @@ function buildWhere(userId: number, filters: TransactionFilters): Prisma.transac
     id_usuario: userId,
     ...(filters.tipo !== undefined && { tipo: filters.tipo }),
     ...(filters.id_categoria !== undefined && { id_categoria: filters.id_categoria }),
+    ...(filters.status !== undefined && { status: filters.status }),
     ...((filters.data_inicio !== undefined || filters.data_fim !== undefined) && {
       data_transacao: {
         ...(filters.data_inicio !== undefined && { gte: filters.data_inicio }),
@@ -25,9 +29,14 @@ function buildWhere(userId: number, filters: TransactionFilters): Prisma.transac
 
 export const transactionRepository = {
   findAllByUser(userId: number, filters: TransactionFilters): Promise<transacoes[]> {
+    const take = filters.limit;
+    const skip = filters.page && filters.limit ? (filters.page - 1) * filters.limit : undefined;
+
     return prisma.transacoes.findMany({
       where: buildWhere(userId, filters),
       orderBy: { data_transacao: "desc" },
+      ...(take !== undefined && { take }),
+      ...(skip !== undefined && { skip }),
     });
   },
 

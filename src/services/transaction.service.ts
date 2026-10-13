@@ -50,6 +50,9 @@ export const transactionService = {
       ...(query.id_categoria !== undefined && { id_categoria: query.id_categoria }),
       ...(query.data_inicio !== undefined && { data_inicio: parseDateOnly(query.data_inicio) }),
       ...(query.data_fim !== undefined && { data_fim: parseDateOnly(query.data_fim) }),
+      ...(query.status !== undefined && { status: query.status }),
+      ...(query.limit !== undefined && { limit: query.limit }),
+      ...(query.page !== undefined && { page: query.page }),
     };
     const transactions = await transactionRepository.findAllByUser(userId, filters);
     return transactions.map(toTransactionResponse);

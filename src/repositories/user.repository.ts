@@ -42,10 +42,21 @@ export const userRepository = {
     });
   },
 
-  linkGoogleId(userId: number, googleId: string): Promise<usuarios> {
+  linkGoogleId(userId: number, googleId: string, resetPassword = false): Promise<usuarios> {
     return prisma.usuarios.update({
       where: { id_usuario: userId },
-      data: { google_id: googleId, email_verificado: true },
+      data: {
+        google_id: googleId,
+        email_verificado: true,
+        ...(resetPassword ? { senha: null } : {}),
+      },
+    });
+  },
+
+  updateLastLogin(userId: number): Promise<usuarios> {
+    return prisma.usuarios.update({
+      where: { id_usuario: userId },
+      data: { ultimo_login: new Date() },
     });
   },
 

@@ -1,7 +1,7 @@
 {
-  "name": "smartfinance-backend",
+  "name": "CifraWealth",
   "version": "1.0.0",
-  "description": "API do SmartFinance — Node.js, Express, TypeScript, Prisma e MySQL.",
+  "description": "API do CifraWealth — Node.js, Express, TypeScript, Prisma e MySQL.",
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
@@ -22,7 +22,9 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^7.5.0",
     "google-auth-library": "^9.15.1",
+    "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^9.1.1",
     "prisma": "^6.19.3",

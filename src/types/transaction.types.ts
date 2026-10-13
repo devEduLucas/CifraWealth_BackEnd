@@ -4,8 +4,6 @@ import { dateOnlySchema, datesInOrder, moneySchema } from "../utils/validationSc
 export const transactionTypeSchema = z.enum(["receita", "despesa"]);
 export const transactionStatusSchema = z.enum(["confirmada", "pendente"]);
 
-
-
 export const createTransactionSchema = z.object({
   id_categoria: z.number().int().positive(),
   valor: moneySchema,
@@ -21,12 +19,17 @@ export const updateTransactionSchema = createTransactionSchema.partial();
 
 export type UpdateTransactionInput = z.infer<typeof updateTransactionSchema>;
 
-export const listTransactionsQuerySchema = z.object({
-  tipo: transactionTypeSchema.optional(),
-  id_categoria: z.coerce.number().int().positive().optional(),
-  data_inicio: dateOnlySchema.optional(),
-  data_fim: dateOnlySchema.optional(),
-}).refine(datesInOrder, "Data inicial deve ser igual ou anterior à data final.");
+export const listTransactionsQuerySchema = z
+  .object({
+    tipo: transactionTypeSchema.optional(),
+    id_categoria: z.coerce.number().int().positive().optional(),
+    data_inicio: dateOnlySchema.optional(),
+    data_fim: dateOnlySchema.optional(),
+    status: transactionStatusSchema.optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
+    page: z.coerce.number().int().positive().optional(),
+  })
+  .refine(datesInOrder, "Data inicial deve ser igual ou anterior à data final.");
 
 export type ListTransactionsQuery = z.infer<typeof listTransactionsQuerySchema>;
 

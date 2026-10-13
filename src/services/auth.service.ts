@@ -33,6 +33,8 @@ export const authService = {
       throw new AppError("Confirme seu e-mail pelo link enviado à sua caixa de entrada antes de entrar.", 403);
     }
 
+    await userRepository.updateLastLogin(user.id_usuario);
+
     const token = signToken({ userId: user.id_usuario });
 
     return { user: toUserResponse(user), token };
@@ -43,10 +45,15 @@ export const authService = {
       throw new AppError("Login com Google não está configurado.", 503);
     }
 
-    const ticket = await googleClient.verifyIdToken({
-      idToken: input.idToken,
-      audience: env.GOOGLE_CLIENT_ID,
-    });
+    let ticket;
+    try {
+      ticket = await googleClient.verifyIdToken({
+        idToken: input.idToken,
+        audience: env.GOOGLE_CLIENT_ID,
+      });
+    } catch {
+      throw new AppError("Token do Google inválido ou expirado.", 401);
+    }
 
     const payload = ticket.getPayload();
 
@@ -61,7 +68,9 @@ export const authService = {
       const existingByEmail = await userRepository.findByEmail(payload.email);
 
       if (existingByEmail) {
-        user = await userRepository.linkGoogleId(existingByEmail.id_usuario, googleId);
+        // If the account was not yet verified, wipe any pre-existing unverified password to prevent account takeover
+        const isUnverified = existingByEmail.email_verificado !== true;
+        user = await userRepository.linkGoogleId(existingByEmail.id_usuario, googleId, isUnverified);
       } else {
         const { nome, sobrenome } = splitFullName(payload.name ?? payload.email);
         user = await userRepository.createWithGoogle({
@@ -73,6 +82,8 @@ export const authService = {
         });
       }
     }
+
+    await userRepository.updateLastLogin(user.id_usuario);
 
     const token = signToken({ userId: user.id_usuario });
 

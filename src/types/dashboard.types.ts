@@ -1,11 +1,12 @@
 import { z } from "zod";
+import { dateOnlySchema, datesInOrder } from "../utils/validationSchemas.js";
 
-const dateOnlyRegex = /^\d{4}-\d{2}-\d{2}$/;
-
-export const dashboardQuerySchema = z.object({
-  data_inicio: z.string().regex(dateOnlyRegex).optional(),
-  data_fim: z.string().regex(dateOnlyRegex).optional(),
-});
+export const dashboardQuerySchema = z
+  .object({
+    data_inicio: dateOnlySchema.optional(),
+    data_fim: dateOnlySchema.optional(),
+  })
+  .refine(datesInOrder, "Data inicial deve ser igual ou anterior à data final.");
 
 export type DashboardQuery = z.infer<typeof dashboardQuerySchema>;
 
