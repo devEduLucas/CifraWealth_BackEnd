@@ -45,6 +45,7 @@ export async function sendVerificationEmail(email: string, token: string): Promi
         verificationUrl,
         "",
         "Este link expira em 24 horas. Se você não solicitou o cadastro, ignore esta mensagem.",
+        "Ao abrir o link, informe a senha escolhida nesta tentativa de cadastro para ativar a conta.",
         "",
         "Cifra Wealth",
       ].join("\n"),
@@ -57,6 +58,7 @@ export async function sendVerificationEmail(email: string, token: string): Promi
             <a href="${verificationUrl}" style="display:inline-block;background:#14b8a6;color:#062a2a;text-decoration:none;font-weight:700;padding:13px 22px;border-radius:8px">Confirmar e-mail</a>
           </p>
           <p>Este link expira em <strong>24 horas</strong>. Se você não solicitou o cadastro, ignore esta mensagem.</p>
+          <p>Ao abrir o link, informe a senha escolhida nesta tentativa de cadastro para ativar a conta.</p>
           <p style="color:#64748b;font-size:12px;margin-top:28px">Cifra Wealth</p>
         </div>
       `,

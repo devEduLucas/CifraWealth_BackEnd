@@ -1,8 +1,8 @@
 import { userRepository } from "../repositories/user.repository.js";
 import { AppError } from "../utils/AppError.js";
-import { hashPassword } from "../utils/hashPassword.js";
+import { comparePassword, hashPassword } from "../utils/hashPassword.js";
 import type { RegisterUserInput, ResendVerificationInput, UserResponse, VerifyEmailInput } from "../types/user.types.js";
-import { createEmailVerificationToken, readEmailVerificationToken } from "../utils/emailVerificationToken.js";
+import { createEmailVerificationToken, matchesEmailVerificationToken, readEmailVerificationToken } from "../utils/emailVerificationToken.js";
 import { isEmailDeliveryConfigured, sendVerificationEmail } from "./email.service.js";
 
 const RESEND_COOLDOWN_MS = 60_000;
@@ -40,39 +40,36 @@ export const userService = {
     const existingUser = await userRepository.findByEmail(input.email);
 
     if (existingUser) {
-      if (existingUser.email_verificado === true) {
+      if (existingUser.email_verificado === true || existingUser.google_id) {
         throw new AppError("E-mail já cadastrado.", 409);
       }
 
       const lastUpdate = existingUser.updated_at ?? existingUser.created_at;
-      if (!lastUpdate || Date.now() - lastUpdate.getTime() >= RESEND_COOLDOWN_MS) {
-        const token = createEmailVerificationToken(existingUser.id_usuario);
-        await sendVerificationEmail(existingUser.email, token);
-        await userRepository.touchUpdatedAt(existingUser.id_usuario);
+      if (lastUpdate && Date.now() - lastUpdate.getTime() < RESEND_COOLDOWN_MS) {
+        throw new AppError("Já existe uma solicitação recente para este e-mail. Aguarde um minuto para cadastrar novamente ou use o link recebido com a senha daquela solicitação.", 429);
       }
-
-      return {
-        email: existingUser.email,
-        message: "Já existe um cadastro pendente para este e-mail. Um link de confirmação foi enviado à sua caixa de entrada.",
-      };
     }
 
     const { nome, sobrenome } = splitFullName(input.fullName);
     const senhaHash = await hashPassword(input.password);
 
-    const user = await userRepository.create({
+    const data = {
       nome,
       sobrenome,
       email: input.email,
       senha: senhaHash,
-    });
+    };
+    const user = existingUser
+      ? await userRepository.replacePendingRegistration(existingUser, data)
+      : await userRepository.create(data);
 
     try {
-      const token = createEmailVerificationToken(user.id_usuario);
+      const token = createEmailVerificationToken({ ...user, senha: senhaHash });
       await sendVerificationEmail(user.email, token);
     } catch (error) {
       try {
-        await userRepository.deleteById(user.id_usuario);
+        // Never delete an account that was confirmed or changed while SMTP was sending.
+        await userRepository.deletePendingRegistration(user.id_usuario, senhaHash);
       } catch (cleanupError) {
         console.error("Não foi possível remover um cadastro que ficou sem e-mail de confirmação.", cleanupError);
       }
@@ -89,18 +86,25 @@ export const userService = {
   },
 
   async verifyEmail(input: VerifyEmailInput): Promise<{ message: string }> {
-    const userId = readEmailVerificationToken(input.token);
+    const { userId, version } = readEmailVerificationToken(input.token);
     const user = await userRepository.findById(userId);
 
     if (!user) {
       throw new AppError("O cadastro associado a este link não foi encontrado.", 404);
     }
 
+    if (!user.senha || !matchesEmailVerificationToken(version, { ...user, senha: user.senha }) || !await comparePassword(input.password, user.senha)) {
+      throw new AppError("O link não corresponde a este cadastro ou a senha está incorreta. Use o link mais recente e a senha informada no cadastro.", 400);
+    }
+
     if (user.email_verificado === true) {
       return { message: "Este e-mail já foi confirmado. Você já pode entrar na sua conta." };
     }
 
-    await userRepository.markEmailVerified(userId);
+    const result = await userRepository.markEmailVerified(userId, user.senha);
+    if (result.count !== 1) {
+      throw new AppError("O cadastro foi atualizado durante a confirmação. Tente entrar ou solicite outro link.", 409);
+    }
     return { message: "E-mail confirmado com sucesso! Agora você já pode entrar no Cifra Wealth." };
   },
 
@@ -119,9 +123,9 @@ export const userService = {
       return { message: RESEND_GENERIC_MESSAGE };
     }
 
-    const token = createEmailVerificationToken(user.id_usuario);
+    const token = createEmailVerificationToken({ ...user, senha: user.senha });
     await sendVerificationEmail(user.email, token);
-    await userRepository.touchUpdatedAt(user.id_usuario);
+    await userRepository.touchUpdatedAt(user.id_usuario, user.senha);
 
     return { message: RESEND_GENERIC_MESSAGE };
   },
