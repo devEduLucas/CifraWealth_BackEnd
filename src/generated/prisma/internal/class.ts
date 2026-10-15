@@ -23,7 +23,7 @@ const config: runtime.GetPrismaClientConfig = {
       "value": "prisma-client"
     },
     "output": {
-      "value": "C:\\Users\\Pichau\\Documents\\2026_Programação\\Projeto_Final\\Backend\\CifraWealth_BackEnd\\src\\generated\\prisma",
+      "value": "C:\\Users\\I2HN\\Documents\\Project_final\\BackEnd\\CifraWealth_BackEnd\\src\\generated\\prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -37,7 +37,7 @@ const config: runtime.GetPrismaClientConfig = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\Users\\Pichau\\Documents\\2026_Programação\\Projeto_Final\\Backend\\CifraWealth_BackEnd\\prisma\\schema.prisma",
+    "sourceFilePath": "C:\\Users\\I2HN\\Documents\\Project_final\\BackEnd\\CifraWealth_BackEnd\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativePath": "../../../prisma",

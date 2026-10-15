@@ -27,18 +27,15 @@ const envSchema = z.object({
     (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
     z.string().url().optional()
   ),
-  SMTP_HOST: optionalEnvString,
-  SMTP_PORT: z.preprocess(
-    (value) => (value === undefined || value === null || value === "" ? 587 : value),
-    z.coerce.number().int().positive()
+  // Brevo (antigo Sendinblue) - API REST via HTTPS (porta 443)
+  BREVO_API_KEY: optionalEnvString,
+  BREVO_SENDER_EMAIL: optionalEmailEnv,
+  BREVO_SENDER_NAME: optionalEnvString.default("Cifra Wealth"),
+  // Suporte a URL customizada da Brevo (para testes/mocks)
+  BREVO_API_URL: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().url().default("https://api.brevo.com/v3/smtp/email")
   ),
-  SMTP_SECURE: z.preprocess(
-    (value) => (value === undefined || value === null || value === "" ? "false" : value),
-    z.enum(["true", "false"])
-  ).transform((value) => value === "true"),
-  SMTP_USER: optionalEnvString,
-  SMTP_PASS: optionalEnvString,
-  SMTP_FROM: optionalEmailEnv,
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
