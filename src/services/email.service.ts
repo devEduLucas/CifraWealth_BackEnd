@@ -23,35 +23,18 @@ export async function sendVerificationEmail(email: string, token: string): Promi
 
   const verificationUrl = `${env.FRONTEND_URL!.replace(/\/+$/, "")}/verify-email?token=${encodeURIComponent(token)}`;
 
-  // Log in development for easy debugging and immediate testing
-  if (env.NODE_ENV === "development") {
-    console.log(`[SMTP] Iniciando envio para: ${email}`);
-    console.log(`[SMTP - Link Direto de Confirmação]: ${verificationUrl}`);
-  }
-
-  const transportConfig =
-    env.SMTP_HOST === "smtp.gmail.com"
-      ? {
-          service: "gmail",
-          auth: {
-            user: env.SMTP_USER!,
-            pass: env.SMTP_PASS!,
-          },
-        }
-      : {
-          host: env.SMTP_HOST!,
-          port: env.SMTP_PORT,
-          secure: env.SMTP_SECURE,
-          auth: {
-            user: env.SMTP_USER!,
-            pass: env.SMTP_PASS!,
-          },
-        };
-
-  const transporter = nodemailer.createTransport(transportConfig);
+  const transporter = nodemailer.createTransport({
+    host: env.SMTP_HOST!,
+    port: env.SMTP_PORT,
+    secure: env.SMTP_SECURE,
+    auth: { user: env.SMTP_USER!, pass: env.SMTP_PASS! },
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 20_000,
+  });
 
   try {
-    const info = await transporter.sendMail({
+    await transporter.sendMail({
       from: env.SMTP_FROM!,
       to: email,
       subject: "Confirme seu e-mail — Cifra Wealth",
@@ -79,11 +62,11 @@ export async function sendVerificationEmail(email: string, token: string): Promi
       `,
     });
 
-    if (env.NODE_ENV === "development") {
-      console.log(`[SMTP] E-mail enviado com sucesso! MessageID: ${info.messageId}`);
-    }
   } catch (error) {
-    console.error("[SMTP - Erro ao enviar e-mail]:", error);
-    throw error;
+    const code = error && typeof error === "object" && "code" in error ? String(error.code) : "SMTP_ERROR";
+    console.error("Falha no serviço de envio de e-mail:", code);
+    throw new AppError("Não foi possível enviar o e-mail de confirmação. Tente novamente mais tarde.", 502);
+  } finally {
+    transporter.close();
   }
 }
