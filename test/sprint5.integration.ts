@@ -39,7 +39,9 @@ test('Sprint 5: autenticação, isolamento, aportes simultâneos, datas e relat�
     const userA=ids[0]!, userB=ids[1]!; const tokenA=signToken({userId:userA}), tokenB=signToken({userId:userB});
     const login=await request('POST','/auth/login',{email:'sprint-A-' + suffix + '@example.com',password:'TesteSprint5!123'});assert.equal(login.status,200);assert.ok(login.data.token);
     assert.equal((await request('GET','/goals')).status,401);
-    const income = await request('POST','/categories',{nome:'Receita de teste',tipo:'receita'},tokenA);assert.equal(income.status,201);assert.equal(income.data.editavel,true);
+    const income = await request('POST','/categories',{nome:'Receita de teste',tipo:'receita'},tokenA);assert.equal(income.status,201);
+    assert.equal((await request('GET','/categories',undefined,tokenA)).data.length, DEFAULT_CATEGORIES.length + 1);
+    assert.equal((await request('POST','/categories',{nome:'Receita de teste',tipo:'receita'},tokenA)).status,409);
     const expense = await request('POST','/categories',{nome:'Despesa de teste',tipo:'despesa'},tokenA);assert.equal(expense.status,201);
     const categoryId=income.data.id_categoria, expenseId=expense.data.id_categoria;
     assert.equal((await request('GET','/categories',undefined,tokenB)).data.some((item: {id_categoria:number})=>item.id_categoria===categoryId),false);
@@ -85,13 +87,14 @@ test('Sprint 5: autenticação, isolamento, aportes simultâneos, datas e relat�
     assert.equal((await request('DELETE','/categories/'+categoryId,undefined,tokenA)).status,204);
     assert.equal((await request('DELETE','/goals/'+goalId,undefined,tokenA)).status,204);
   } finally {
-    if (ids.length) {
+    try { if (ids.length) {
       await prisma.transacoes.deleteMany({where:{id_usuario:{in:ids}}});
       await prisma.metas_financeiras.deleteMany({where:{id_usuario:{in:ids}}});
       await prisma.categorias.deleteMany({where:{id_usuario:{in:ids}}});
       await prisma.usuarios.deleteMany({where:{id_usuario:{in:ids}}});
+    } } finally {
+      try { await new Promise<void>((resolve,reject)=>server.close((error)=>error?reject(error):resolve())); }
+      finally { await prisma.$disconnect(); }
     }
-    if (sharedCategory !== undefined) await prisma.categorias.deleteMany({where:{id_categoria:sharedCategory}});
-    await new Promise<void>((resolve,reject)=>server.close((error)=>error?reject(error):resolve()));await prisma.$disconnect();
   }
 });
