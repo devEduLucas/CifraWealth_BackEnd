@@ -37,6 +37,7 @@ const resendLimiter = rateLimit({
 
 app.use("/api/auth/login", authLimiter);
 app.use("/api/users/register", authLimiter);
+app.use("/api/users/verify-email", authLimiter);
 app.use("/api/users/resend-verification", resendLimiter);
 
 app.use("/api", router);

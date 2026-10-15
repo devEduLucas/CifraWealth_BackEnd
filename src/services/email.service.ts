@@ -23,35 +23,18 @@ export async function sendVerificationEmail(email: string, token: string): Promi
 
   const verificationUrl = `${env.FRONTEND_URL!.replace(/\/+$/, "")}/verify-email?token=${encodeURIComponent(token)}`;
 
-  // Log in development for easy debugging and immediate testing
-  if (env.NODE_ENV === "development") {
-    console.log(`[SMTP] Iniciando envio para: ${email}`);
-    console.log(`[SMTP - Link Direto de Confirmação]: ${verificationUrl}`);
-  }
-
-  const transportConfig =
-    env.SMTP_HOST === "smtp.gmail.com"
-      ? {
-          service: "gmail",
-          auth: {
-            user: env.SMTP_USER!,
-            pass: env.SMTP_PASS!,
-          },
-        }
-      : {
-          host: env.SMTP_HOST!,
-          port: env.SMTP_PORT,
-          secure: env.SMTP_SECURE,
-          auth: {
-            user: env.SMTP_USER!,
-            pass: env.SMTP_PASS!,
-          },
-        };
-
-  const transporter = nodemailer.createTransport(transportConfig);
+  const transporter = nodemailer.createTransport({
+    host: env.SMTP_HOST!,
+    port: env.SMTP_PORT,
+    secure: env.SMTP_SECURE,
+    auth: { user: env.SMTP_USER!, pass: env.SMTP_PASS! },
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 20_000,
+  });
 
   try {
-    const info = await transporter.sendMail({
+    await transporter.sendMail({
       from: env.SMTP_FROM!,
       to: email,
       subject: "Confirme seu e-mail — Cifra Wealth",
@@ -62,6 +45,7 @@ export async function sendVerificationEmail(email: string, token: string): Promi
         verificationUrl,
         "",
         "Este link expira em 24 horas. Se você não solicitou o cadastro, ignore esta mensagem.",
+        "Ao abrir o link, informe a senha escolhida nesta tentativa de cadastro para ativar a conta.",
         "",
         "Cifra Wealth",
       ].join("\n"),
@@ -74,16 +58,17 @@ export async function sendVerificationEmail(email: string, token: string): Promi
             <a href="${verificationUrl}" style="display:inline-block;background:#14b8a6;color:#062a2a;text-decoration:none;font-weight:700;padding:13px 22px;border-radius:8px">Confirmar e-mail</a>
           </p>
           <p>Este link expira em <strong>24 horas</strong>. Se você não solicitou o cadastro, ignore esta mensagem.</p>
+          <p>Ao abrir o link, informe a senha escolhida nesta tentativa de cadastro para ativar a conta.</p>
           <p style="color:#64748b;font-size:12px;margin-top:28px">Cifra Wealth</p>
         </div>
       `,
     });
 
-    if (env.NODE_ENV === "development") {
-      console.log(`[SMTP] E-mail enviado com sucesso! MessageID: ${info.messageId}`);
-    }
   } catch (error) {
-    console.error("[SMTP - Erro ao enviar e-mail]:", error);
-    throw error;
+    const code = error && typeof error === "object" && "code" in error ? String(error.code) : "SMTP_ERROR";
+    console.error("Falha no serviço de envio de e-mail:", code);
+    throw new AppError("Não foi possível enviar o e-mail de confirmação. Tente novamente mais tarde.", 502);
+  } finally {
+    transporter.close();
   }
 }

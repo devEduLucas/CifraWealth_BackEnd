@@ -4,17 +4,34 @@ API Express 5, TypeScript, Prisma e MySQL. A estrutura separa rotas, controllers
 
 ## Executar
 
-1. Configure um banco MySQL e copie .env.example para .env, preenchendo DATABASE_URL, JWT_SECRET, CORS_ORIGIN e GOOGLE_CLIENT_ID.
+1. Configure um banco MySQL e copie .env.example para .env, preenchendo DATABASE_URL e um JWT_SECRET aleatório. GOOGLE_CLIENT_ID é opcional e habilita o login com Google.
 2. Execute npm install, npm run prisma:migrate e npm run dev.
-3. O frontend usa http://localhost:3000/api por padrão. Em produção, npm run build e npm start.
+3. A API local usa http://localhost:3000/api; o frontend usa http://localhost:5173. CORS_ORIGIN e FRONTEND_URL devem apontar para a URL do frontend. Em produção, npm run build e npm start.
 
 Nunca publique o arquivo .env. O repositório inclui apenas valores de exemplo.
+
+O cliente em src/generated/prisma é gerado no postinstall. Ele ainda é versionado e pode apresentar diferenças de caminhos locais após npm install; revise o diff antes de commitar. Se o Windows impedir a substituição da DLL durante prisma generate, pare a instância local da API que está usando o Prisma e execute npm run prisma:generate novamente.
+
+## Cadastro e confirmação de e-mail
+
+- Preencha SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS e SMTP_FROM com os dados do seu provedor. Para conexão TLS desde o início, use a porta e SMTP_SECURE=true indicados pelo provedor; para STARTTLS, use SMTP_SECURE=false.
+- Configure FRONTEND_URL e EMAIL_VERIFICATION_SECRET com um segredo aleatório de pelo menos 32 caracteres, diferente de JWT_SECRET. Para gerar cada segredo, execute `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` e guarde o resultado somente no .env.
+- Sem configuração completa de envio, cadastro e reenvio retornam 503. A aplicação não simula envio nem libera contas automaticamente. Login com Google pode funcionar independentemente do SMTP quando configurado.
+- POST /api/users/register recebe fullName, email e password, cria uma conta pendente e retorna email/message. O link recebido abre /verify-email; para ativar, informe a mesma senha daquela tentativa.
+- POST /api/users/verify-email exige token e password. O token dura 24 horas, é vinculado às credenciais e não serve para acessar a API. Links de versões anteriores devem ser reenviados após esta atualização.
+- Repetir um cadastro pendente após um minuto atualiza suas credenciais e invalida o link anterior. Durante esse minuto, o servidor retorna 429 sem alterar a senha. Confirmar exige tanto o link quanto a senha correspondente.
+- POST /api/users/resend-verification recebe email e respeita o intervalo de um minuto. A resposta é genérica; contas confirmadas não recebem novo link.
+- Falha no envio remove somente a tentativa ainda pendente e correspondente àquela senha, preservando contas ativadas ou atualizadas durante o envio. Tokens e links completos não são escritos nos logs.
+
+Reinicie o backend após alterar o .env. Em produção, use as URLs HTTPS do ambiente em CORS_ORIGIN/FRONTEND_URL e configure o frontend com a URL pública desta API.
 
 ## Banco existente
 
 Para um banco criado pelo SQL antigo que já contém usuarios, categorias, transacoes e metas_financeiras, confira a compatibilidade das tabelas e registre a base com npx prisma migrate resolve --applied 20260803104637_init antes de npm run prisma:migrate. Não use reset para atualizar um banco com dados.
 
-O banco local deste projeto já foi verificado e atualizado. As migrations compatibilizam senha opcional/identificador Google e acrescentam id_usuario às categorias. Registros existentes são preservados: categorias antigas permanecem compartilhadas e somente leitura; categorias novas pertencem ao criador.
+As migrations compatibilizam senha opcional/identificador Google e tornam as categorias próprias de cada usuário. A migration 20261008120000_categorias_por_usuario copia categorias iniciais, recategoriza transações e remove os registros compartilhados. Cada nova conta recebe suas categorias iniciais, editáveis e removíveis quando não possuem transações.
+
+A migration 20261012150000_email_verification_backfill mantém o acesso das contas anteriores à ativação da verificação. Aplique migrations antes de iniciar a nova versão; contas criadas depois precisam confirmar o e-mail. Confira cada ambiente com `npx prisma migrate status`, em vez de assumir que seu banco já está atualizado.
 
 ## Sprint 5
 
@@ -31,7 +48,7 @@ A reserva de uma meta é um registro manual do dinheiro já guardado. Não repre
 
 ## Testes
 
-- npm run typecheck e npm run build.
+- npm run typecheck, npm run typecheck:tests e npm run build. A verificação dos testes inclui os arquivos fora de src para detectar referências removidas.
 - npm test: cálculos, centavos, datas, períodos vazios e comparações. Não depende do frontend.
-- npm run test:integration: API e MySQL local, com contas temporárias e limpeza restrita aos dados dos testes. Cobre autenticação, categorias por usuário, acesso cruzado, aportes simultâneos, conclusão/reabertura, datas, transações pendentes e relatórios.
+- npm run test:integration: API e MySQL local, com contas temporárias e limpeza restrita aos dados dos testes. Cobre categorias por usuário, acesso cruzado, aportes simultâneos, conclusão/reabertura, datas, transações pendentes e relatórios. Também verifica cadastro, senha/link vinculados, confirmação, reenvio e falha de envio com um servidor SMTP local em memória, sem mensagens para destinatários externos.
 - No frontend, npm run test:e2e executa os fluxos no Chrome em desktop e celular.

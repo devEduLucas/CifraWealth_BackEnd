@@ -51,3 +51,6 @@ uploads/
 # Arquivos de backup
 *.bak
 *.old
+
+# Cópias temporárias do engine, quando o Windows mantém a DLL em uso.
+/src/generated/prisma/*.tmp*

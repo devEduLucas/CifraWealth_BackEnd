@@ -1,7 +1,10 @@
 import { z } from "zod";
 
 export const registerUserSchema = z.object({
-  fullName: z.string().trim().min(3, "Nome completo deve ter no mínimo 3 caracteres."),
+  fullName: z.string().trim().min(3, "Nome completo deve ter no mínimo 3 caracteres.").refine((value) => {
+    const [first = "", ...rest] = value.split(/\s+/);
+    return first.length <= 50 && rest.join(" ").length <= 50;
+  }, "Nome e sobrenome devem ter até 50 caracteres cada."),
   email: z.string().trim().toLowerCase().email("E-mail inválido."),
   password: z
     .string()
@@ -13,6 +16,7 @@ export type RegisterUserInput = z.infer<typeof registerUserSchema>;
 
 export const verifyEmailSchema = z.object({
   token: z.string().min(1, "Token de confirmação é obrigatório."),
+  password: z.string().min(8, "Informe a senha escolhida no cadastro.").refine((value) => Buffer.byteLength(value, "utf8") <= 72, "A senha não pode exceder 72 bytes."),
 });
 
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;

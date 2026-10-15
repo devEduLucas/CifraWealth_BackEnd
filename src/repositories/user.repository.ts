@@ -1,6 +1,7 @@
 import { prisma } from "../lib/prisma.js";
 import type { usuarios } from "../generated/prisma/client.js";
 import { DEFAULT_CATEGORIES } from "../utils/defaultCategories.js";
+import { AppError } from "../utils/AppError.js";
 
 export interface CreateUserData {
   nome: string;
@@ -60,20 +61,31 @@ export const userRepository = {
     });
   },
 
-  markEmailVerified(userId: number): Promise<usuarios> {
-    return prisma.usuarios.update({
-      where: { id_usuario: userId },
+  markEmailVerified(userId: number, passwordHash: string) {
+    return prisma.usuarios.updateMany({
+      where: { id_usuario: userId, senha: passwordHash, email_verificado: false, google_id: null },
       data: { email_verificado: true },
     });
   },
 
-  deleteById(userId: number): Promise<usuarios> {
-    return prisma.usuarios.delete({ where: { id_usuario: userId } });
+  replacePendingRegistration(current: usuarios, data: CreateUserData): Promise<usuarios> {
+    return prisma.$transaction(async (tx) => {
+      const changed = await tx.usuarios.updateMany({
+        where: { id_usuario: current.id_usuario, senha: current.senha, updated_at: current.updated_at, email_verificado: false, google_id: null },
+        data,
+      });
+      if (changed.count !== 1) throw new AppError("O cadastro foi atualizado. Tente entrar ou solicite outro link de confirmação.", 409);
+      return tx.usuarios.findUniqueOrThrow({ where: { id_usuario: current.id_usuario } });
+    });
   },
 
-  touchUpdatedAt(userId: number): Promise<usuarios> {
-    return prisma.usuarios.update({
-      where: { id_usuario: userId },
+  deletePendingRegistration(userId: number, passwordHash: string) {
+    return prisma.usuarios.deleteMany({ where: { id_usuario: userId, senha: passwordHash, email_verificado: false, google_id: null } });
+  },
+
+  touchUpdatedAt(userId: number, passwordHash: string) {
+    return prisma.usuarios.updateMany({
+      where: { id_usuario: userId, senha: passwordHash, email_verificado: false, google_id: null },
       data: { updated_at: new Date() },
     });
   },

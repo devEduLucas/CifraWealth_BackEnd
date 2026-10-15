@@ -9,10 +9,11 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
+    "typecheck:tests": "tsc -p tsconfig.test.json",
     "prisma:generate": "prisma generate",
     "postinstall": "prisma generate",
     "test": "node --import tsx --test test/reports.test.ts",
-    "test:integration": "node --import tsx --test test/sprint5.integration.ts",
+    "test:integration": "node --import tsx --test test/sprint5.integration.ts test/auth.integration.ts",
     "db:seed": "prisma db seed",
     "prisma:migrate": "prisma migrate deploy"
   },
