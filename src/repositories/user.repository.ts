@@ -89,4 +89,12 @@ export const userRepository = {
       data: { updated_at: new Date() },
     });
   },
+
+  updatePassword(userId: number, passwordHash: string): Promise<usuarios> {
+    return prisma.usuarios.update({
+      where: { id_usuario: userId },
+      data: { senha: passwordHash, email_verificado: true },
+    });
+  },
 };
+

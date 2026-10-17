@@ -51,3 +51,19 @@ export interface AuthResponse {
   user: UserResponse;
   token: string;
 }
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().toLowerCase().email("E-mail inválido."),
+});
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, "Token de redefinição é obrigatório."),
+  password: z
+    .string()
+    .min(8, "A nova senha deve ter no mínimo 8 caracteres.")
+    .refine((val) => Buffer.byteLength(val, "utf8") <= 72, "A senha não pode exceder 72 bytes."),
+});
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
