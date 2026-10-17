@@ -2,10 +2,12 @@ import { OAuth2Client } from "google-auth-library";
 import { userRepository } from "../repositories/user.repository.js";
 import { toUserResponse } from "./user.service.js";
 import { AppError } from "../utils/AppError.js";
-import { comparePassword } from "../utils/hashPassword.js";
+import { comparePassword, hashPassword } from "../utils/hashPassword.js";
 import { signToken } from "../utils/jwt.js";
 import { env } from "../config/env.js";
-import type { AuthResponse, GoogleLoginInput, LoginUserInput } from "../types/user.types.js";
+import { createPasswordResetToken, matchesPasswordResetToken, readPasswordResetToken } from "../utils/PasswordResetToken.js";
+import { sendPasswordResetEmail } from "./email.service.js";
+import type { AuthResponse, ForgotPasswordInput, GoogleLoginInput, LoginUserInput, ResetPasswordInput } from "../types/user.types.js";
 
 const googleClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
 
@@ -88,5 +90,42 @@ export const authService = {
     const token = signToken({ userId: user.id_usuario });
 
     return { user: toUserResponse(user), token };
+  },
+
+  async forgotPassword(input: ForgotPasswordInput): Promise<{ message: string }> {
+    const genericResponse = {
+      message: "Se o e-mail informado estiver cadastrado em nossa plataforma, você receberá as instruções de recuperação em instantes.",
+    };
+
+    const user = await userRepository.findByEmail(input.email);
+
+    // Se o usuário não existe ou usa apenas login Google sem senha, retorna mensagem genérica (anti-enumeração)
+    if (!user || (!user.senha && user.google_id)) {
+      return genericResponse;
+    }
+
+    const token = createPasswordResetToken(user);
+    await sendPasswordResetEmail(user.email, token);
+
+    return genericResponse;
+  },
+
+  async resetPassword(input: ResetPasswordInput): Promise<{ message: string }> {
+    const { userId, version } = readPasswordResetToken(input.token);
+
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new AppError("Usuário não encontrado.", 404);
+    }
+
+    const isValidToken = matchesPasswordResetToken(version, user);
+    if (!isValidToken) {
+      throw new AppError("O link de redefinição é inválido ou já foi utilizado. Solicite um novo link se necessário.", 400);
+    }
+
+    const newPasswordHash = await hashPassword(input.password);
+    await userRepository.updatePassword(user.id_usuario, newPasswordHash);
+
+    return { message: "Senha redefinida com sucesso! Você já pode entrar com sua nova senha." };
   },
 };
