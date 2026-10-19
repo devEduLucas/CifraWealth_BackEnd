@@ -65,6 +65,13 @@ test('Sprint 5: autenticação, isolamento, aportes simultâneos, datas e relat�
     assert.equal((await request('PUT','/goals/'+goalId,{data_inicio:'2026-10-25',data_fim:'2026-10-05'},tokenA)).status,400);
     await request('PUT','/goals/'+goalId,{status:'cancelada'},tokenA);
     assert.equal((await request('POST','/goals/'+goalId+'/contribute',{valor:10},tokenA)).status,400);
+    assert.equal((await request('POST','/goals/'+goalId+'/withdraw',{valor:10},tokenA)).status,400);
+    assert.equal((await request('PUT','/goals/'+goalId,{valor_atual:1.005},tokenA)).status,400);
+    assert.equal((await request('PUT','/goals/'+goalId,{status:'em_andamento'},tokenA)).status,200);
+    assert.equal((await request('POST','/goals/'+goalId+'/withdraw',{valor:10},tokenB)).status,404);
+    const withdrawals = await Promise.all([80,80].map((valor) => request('POST','/goals/'+goalId+'/withdraw',{valor},tokenA)));
+    assert.deepEqual(withdrawals.map((item) => item.status).sort(), [200,400]);
+    assert.equal((await request('GET','/goals/'+goalId,undefined,tokenA)).data.valor_atual,20);
     const createTx=(valor:number,tipo:'receita'|'despesa',date:string,token=tokenA,status='confirmada')=>request('POST','/transactions',{valor,tipo,data_transacao:date,id_categoria:tipo==='receita'?categoryId:expenseId,descricao:'Movimentação Sprint 5',status},token);
     assert.equal((await createTx(10,'receita','2026-10-05',tokenB)).status,404);
     assert.equal((await request('POST','/transactions',{valor:10,tipo:'despesa',data_transacao:'2026-10-05',id_categoria:categoryId,descricao:'Tipo incorreto'},tokenA)).status,400);

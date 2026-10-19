@@ -22,3 +22,4 @@ financialGoalRoutes.post(
   financialGoalController.contribute
 );
 financialGoalRoutes.delete("/:id", financialGoalController.remove);
+financialGoalRoutes.post("/:id/withdraw", validate(contributeGoalSchema), financialGoalController.withdraw);

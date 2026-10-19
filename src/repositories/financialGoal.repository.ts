@@ -45,6 +45,14 @@ export const financialGoalRepository = {
       return { valor_atual: value, status: value.gte(current.valor_objetivo) ? "concluida" : "em_andamento" };
     });
   },
+  withdraw(id: number, userId: number, amount: Prisma.Decimal): Promise<metas_financeiras> {
+    return changeLocked(id, userId, (current) => {
+      if (current.status === "cancelada") throw new AppError("Reative a meta antes de registrar uma retirada.", 400);
+      const value = (current.valor_atual ?? new Prisma.Decimal(0)).minus(amount);
+      if (value.lt(0)) throw new AppError("A retirada não pode exceder o valor guardado.", 400);
+      return { valor_atual: value, status: value.gte(current.valor_objetivo) ? "concluida" : "em_andamento" };
+    });
+  },
   delete(id: number, userId: number): Promise<metas_financeiras> {
     return prisma.metas_financeiras.delete({ where: { id_meta: id, id_usuario: userId } });
   },
