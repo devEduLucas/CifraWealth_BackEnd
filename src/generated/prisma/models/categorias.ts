@@ -264,6 +264,7 @@ export type categoriasOrderByWithRelationInput = {
 
 export type categoriasWhereUniqueInput = Prisma.AtLeast<{
   id_categoria?: number
+  id_usuario_nome_tipo?: Prisma.categoriasId_usuarioNomeTipoCompoundUniqueInput
   AND?: Prisma.categoriasWhereInput | Prisma.categoriasWhereInput[]
   OR?: Prisma.categoriasWhereInput[]
   NOT?: Prisma.categoriasWhereInput | Prisma.categoriasWhereInput[]
@@ -276,7 +277,7 @@ export type categoriasWhereUniqueInput = Prisma.AtLeast<{
   updated_at?: Prisma.DateTimeNullableFilter<"categorias"> | Date | string | null
   usuarios?: Prisma.XOR<Prisma.UsuariosScalarRelationFilter, Prisma.usuariosWhereInput>
   transacoes?: Prisma.TransacoesListRelationFilter
-}, "id_categoria">
+}, "id_categoria" | "id_usuario_nome_tipo">
 
 export type categoriasOrderByWithAggregationInput = {
   id_categoria?: Prisma.SortOrder
@@ -389,6 +390,12 @@ export type categoriasOrderByRelevanceInput = {
   fields: Prisma.categoriasOrderByRelevanceFieldEnum | Prisma.categoriasOrderByRelevanceFieldEnum[]
   sort: Prisma.SortOrder
   search: string
+}
+
+export type categoriasId_usuarioNomeTipoCompoundUniqueInput = {
+  id_usuario: number
+  nome: string
+  tipo: $Enums.categorias_tipo
 }
 
 export type categoriasCountOrderByAggregateInput = {

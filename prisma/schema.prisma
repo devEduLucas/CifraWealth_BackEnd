@@ -21,6 +21,7 @@ model categorias {
   transacoes   transacoes[]
 
   @@index([id_usuario], map: "idx_categorias_usuario")
+  @@unique([id_usuario, nome, tipo], map: "uq_categorias_usuario_nome_tipo")
 }
 
 model metas_financeiras {

@@ -44,6 +44,9 @@ test('Sprint 5: autenticação, isolamento, aportes simultâneos, datas e relat�
     const income = await request('POST','/categories',{nome:'Receita de teste',tipo:'receita'},tokenA);assert.equal(income.status,201);
     assert.equal((await request('GET','/categories',undefined,tokenA)).data.length, DEFAULT_CATEGORIES.length + 1);
     assert.equal((await request('POST','/categories',{nome:'Receita de teste',tipo:'receita'},tokenA)).status,409);
+    const simultaneousCategories = await Promise.all(Array.from({ length: 6 }, () => request('POST','/categories',{nome:'Categoria concorrente',tipo:'despesa'},tokenA)));
+    assert.equal(simultaneousCategories.filter((item) => item.status === 201).length, 1);
+    assert.equal(simultaneousCategories.filter((item) => item.status === 409).length, 5);
     const expense = await request('POST','/categories',{nome:'Despesa de teste',tipo:'despesa'},tokenA);assert.equal(expense.status,201);
     const categoryId=income.data.id_categoria, expenseId=expense.data.id_categoria;
     assert.equal((await request('GET','/categories',undefined,tokenB)).data.some((item: {id_categoria:number})=>item.id_categoria===categoryId),false);
