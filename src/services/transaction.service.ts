@@ -2,7 +2,7 @@ import { categoryRepository } from "../repositories/category.repository.js";
 import { transactionRepository } from "../repositories/transaction.repository.js";
 import type { TransactionFilters } from "../repositories/transaction.repository.js";
 import { AppError } from "../utils/AppError.js";
-import { parseDateOnly, toDateOnlyString } from "../utils/formatDate.js";
+import { parseDateOnly, toDateOnlyString, todayDateOnly } from "../utils/formatDate.js";
 import { toDecimal, toMoneyNumber } from "../utils/money.js";
 import type {
   CreateTransactionInput,
@@ -72,7 +72,7 @@ export const transactionService = {
       tipo: input.tipo,
       descricao: input.descricao,
       data_transacao: parseDateOnly(input.data_transacao),
-      ...(input.status !== undefined && { status: input.status }),
+      status: input.status ?? (input.data_transacao > todayDateOnly() ? 'pendente' : 'confirmada'),
     });
     return toTransactionResponse(transaction);
   },

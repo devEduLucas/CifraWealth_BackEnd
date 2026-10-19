@@ -17,7 +17,7 @@ export const reportController = {
       }
 
       const query = monthlyReportQuerySchema.parse(req.query);
-      const report = await reportService.monthly(req.userId, query.ano);
+      const report = await reportService.monthly(req.userId, query.ano, query.data_fim);
       res.status(200).json(report);
     } catch (error) {
       next(error);

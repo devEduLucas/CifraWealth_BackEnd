@@ -9,6 +9,7 @@ import { sessionVersion, signToken } from '../src/utils/jwt.js';
 
 import { hashPassword } from '../src/utils/hashPassword.js';
 import { DEFAULT_CATEGORIES } from '../src/utils/defaultCategories.js';
+import { todayDateOnly } from '../src/utils/formatDate.js';
 
 test('Sprint 5: autenticação, isolamento, aportes simultâneos, datas e relatório real', async () => {
   const databaseHost = new URL(env.DATABASE_URL).hostname;
@@ -94,6 +95,21 @@ test('Sprint 5: autenticação, isolamento, aportes simultâneos, datas e relat�
     const filtered=await request('GET','/transactions?data_inicio=2026-10-31&data_fim=2026-10-31',undefined,tokenA);assert.equal(filtered.data.length,1);
     const monthly=await request('GET','/reports/monthly?ano=2026',undefined,tokenA);assert.equal(monthly.data[9].saldo,849.75);
     const dashboard=await request('GET','/dashboard',undefined,tokenA);assert.equal(dashboard.status,200);
+    const today = todayDateOnly();
+    const nextDay = new Date(today + 'T12:00:00Z'); nextDay.setUTCDate(nextDay.getUTCDate()+1);
+    const future = nextDay.toISOString().slice(0,10);
+    assert.equal((await createTx(11,'receita',today)).status,201);
+    assert.equal((await createTx(200,'receita',future)).status,201);
+    const automaticPending = await request('POST','/transactions',{valor:300,tipo:'receita',data_transacao:future,id_categoria:categoryId,descricao:'Prevista automaticamente'},tokenA);
+    assert.equal(automaticPending.status,201); assert.equal(automaticPending.data.status,'pendente');
+    const allTransactions = (await request('GET','/transactions',undefined,tokenA)).data as Array<{valor:number;tipo:string;status:string;data_transacao:string}>;
+    const realized = allTransactions.filter((item) => item.status === 'confirmada' && item.data_transacao <= today);
+    const expectedCents = realized.reduce((sum,item) => sum + (item.tipo === 'receita' ? 1 : -1) * Math.round(item.valor * 100), 0);
+    assert.equal((await request('GET','/dashboard',undefined,tokenA)).data.saldo,expectedCents / 100);
+    assert.equal((await request('GET','/dashboard?data_fim='+future,undefined,tokenA)).data.saldo,expectedCents / 100);
+    const limitedMonthly = (await request('GET','/reports/monthly?ano='+today.slice(0,4)+'&data_fim='+today,undefined,tokenA)).data;
+    const currentMonthCents = realized.filter((item) => item.data_transacao.startsWith(today.slice(0,7))).reduce((sum,item) => sum + (item.tipo === 'receita' ? 1 : -1) * Math.round(item.valor * 100), 0);
+    assert.equal(limitedMonthly[Number(today.slice(5,7))-1].saldo,currentMonthCents / 100);
     // Cleanup of our own resources also exercises successful delete routes.
     for (const transaction of (await request('GET','/transactions',undefined,tokenA)).data) assert.equal((await request('DELETE','/transactions/'+transaction.id_transacao,undefined,tokenA)).status,204);
     assert.equal((await request('DELETE','/categories/'+categoryId,undefined,tokenA)).status,204);

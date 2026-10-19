@@ -15,8 +15,8 @@ export const reportService = {
     ]);
     return buildDetailedReport(query.data_inicio, query.data_fim, transactions.map((item) => ({ id: item.id_transacao, data: toDateOnlyString(item.data_transacao), descricao: item.descricao, categoriaId: item.id_categoria, categoria: item.categorias.nome, cor: item.categorias.cor, tipo: item.tipo, valor: toMoneyNumber(item.valor) })), goals.filter((goal) => goal.status !== "cancelada").map((goal) => ({ id: goal.id_meta, nome: goal.titulo, valorAtual: toMoneyNumber(goal.valor_atual), valorAlvo: toMoneyNumber(goal.valor_objetivo) })));
   },
-  async monthly(userId: number, ano: number): Promise<MonthlyReportItem[]> {
-    const transactions = await reportRepository.findConfirmedByUserAndYear(userId, ano);
+  async monthly(userId: number, ano: number, end?: string): Promise<MonthlyReportItem[]> {
+    const transactions = await reportRepository.findConfirmedByUserAndYear(userId, ano, end ? parseDateOnly(end) : undefined);
 
     const totalsByMonth = new Map<string, { receitas: number; despesas: number }>();
 
