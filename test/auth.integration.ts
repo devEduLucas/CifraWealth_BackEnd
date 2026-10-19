@@ -3,21 +3,25 @@ import assert from 'node:assert/strict';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { once } from 'node:events';
 import http from 'node:http';
+import jwt from 'jsonwebtoken';
 import { app } from '../src/app.js';
 import { env } from '../src/config/env.js';
 import { prisma } from '../src/lib/prisma.js';
-import { signToken } from '../src/utils/jwt.js';
+import { sessionVersion, signToken } from '../src/utils/jwt.js';
+import { hashPassword } from '../src/utils/hashPassword.js';
 
 // Servidor mock da API REST da Brevo (recebe requisições HTTP em memória)
 async function captureBrevo() {
   const messages: Array<{ htmlContent?: string; to?: Array<{ email: string }> }> = [];
   let rejectMail = false;
+  let delayResponse = false;
 
   const server = http.createServer((req, res) => {
     if (req.method === 'POST') {
       let body = '';
       req.on('data', (chunk) => { body += chunk; });
       req.on('end', () => {
+        if (delayResponse) return;
         if (rejectMail) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ message: 'Internal Server Error' }));
@@ -48,6 +52,7 @@ async function captureBrevo() {
     url: `http://127.0.0.1:${address.port}/v3/smtp/email`,
     messages,
     setRejectMail(value: boolean) { rejectMail = value; },
+    setDelayResponse(value: boolean) { delayResponse = value; },
     async close() {
       await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
     },
@@ -120,7 +125,7 @@ test('cadastro e confirmação reais com API Brevo mock, senhas vinculadas e lim
 
       const user = await prisma.usuarios.findUniqueOrThrow({ where: { email } });
       assert.equal(user.email_verificado, false);
-      assert.equal((await request('/users/verify-email', { token: signToken({ userId: user.id_usuario }), password })).status, 400);
+      assert.equal((await request('/users/verify-email', { token: signToken({ userId: user.id_usuario, credentialVersion: sessionVersion(user) }), password })).status, 400);
 
       const protectedResponse = await fetch(base + '/goals', { headers: { Authorization: 'Bearer ' + token } });
       assert.equal(protectedResponse.status, 401);
@@ -188,6 +193,89 @@ test('cadastro e confirmação reais com API Brevo mock, senhas vinculadas e lim
       } finally {
         env.BREVO_API_KEY = previous;
       }
+    });
+
+    await t.test('recuperação não revela contas ausentes ou exclusivas do Google', async () => {
+      const googleEmail = newEmail();
+      await prisma.usuarios.create({ data: { nome: 'Teste Google', email: googleEmail, senha: null, google_id: randomUUID(), email_verificado: true } });
+      const count = brevoMock.messages.length;
+      const missing = await request('/auth/forgot-password', { email: newEmail() });
+      const google = await request('/auth/forgot-password', { email: googleEmail });
+      assert.equal(missing.status, 200);
+      assert.deepEqual(google, missing);
+      assert.equal(brevoMock.messages.length, count);
+    });
+
+    await t.test('recuperação usa link único, rejeita tokens incorretos e encerra sessões antigas', async () => {
+      const email = newEmail();
+      await prisma.usuarios.create({ data: { nome: 'Teste Recuperação', email, senha: await hashPassword(password), email_verificado: true } });
+      const login = await request('/auth/login', { email, password });
+      assert.equal(login.status, 200);
+      const accessToken = login.data.token as string;
+      assert.equal((await request('/auth/forgot-password', { email })).status, 200);
+      const token = brevoMock.lastToken();
+      assert.match(brevoMock.messages.at(-1)!.htmlContent!, /\/reset-password\?token=/);
+      assert.equal((await request('/auth/reset-password', { token: accessToken, password: nextPassword })).status, 400);
+      assert.equal((await request('/auth/reset-password', { token, password: 'curta' })).status, 400);
+      assert.equal((await request('/auth/reset-password', { token, password: 'á'.repeat(40) })).status, 400);
+      const payload = jwt.decode(token) as { userId: number; purpose: string; version: string };
+      const expired = jwt.sign({ userId: payload.userId, purpose: payload.purpose, version: payload.version }, env.JWT_SECRET, { expiresIn: -1, algorithm: 'HS256' });
+      assert.equal((await request('/auth/reset-password', { token: expired, password: nextPassword })).status, 400);
+
+      const otherPassword = 'OutraSenhaNova!789';
+      const results = await Promise.all([
+        request('/auth/reset-password', { token, password: nextPassword }),
+        request('/auth/reset-password', { token, password: otherPassword }),
+      ]);
+      assert.deepEqual(results.map(result => result.status).sort(), [200, 400]);
+      const winner = results[0]!.status === 200 ? nextPassword : otherPassword;
+      assert.equal((await request('/auth/reset-password', { token, password: nextPassword })).status, 400);
+      assert.equal((await request('/auth/login', { email, password })).status, 401);
+      const nextLogin = await request('/auth/login', { email, password: winner });
+      assert.equal(nextLogin.status, 200);
+      assert.equal((await fetch(base + '/goals', { headers: { Authorization: 'Bearer ' + accessToken } })).status, 401);
+      assert.equal((await fetch(base + '/goals', { headers: { Authorization: 'Bearer ' + nextLogin.data.token } })).status, 200);
+    });
+
+    await t.test('falha e timeout da Brevo retornam erro sem alterar a senha', async () => {
+      const email = newEmail();
+      const initialHash = await hashPassword(password);
+      await prisma.usuarios.create({ data: { nome: 'Teste Entrega', email, senha: initialHash, email_verificado: true } });
+      brevoMock.setRejectMail(true);
+      try { assert.equal((await request('/auth/forgot-password', { email })).status, 502); }
+      finally { brevoMock.setRejectMail(false); }
+      const previousTimeout = env.BREVO_TIMEOUT_MS;
+      env.BREVO_TIMEOUT_MS = 100;
+      brevoMock.setDelayResponse(true);
+      try { assert.equal((await request('/auth/forgot-password', { email })).status, 502); }
+      finally { env.BREVO_TIMEOUT_MS = previousTimeout; brevoMock.setDelayResponse(false); }
+      assert.equal((await prisma.usuarios.findUniqueOrThrow({ where: { email } })).senha, initialHash);
+    });
+
+    await t.test('desenvolvimento sem Brevo não simula sucesso nem entrega de mensagens', async () => {
+      const previousKey = env.BREVO_API_KEY;
+      env.BREVO_API_KEY = undefined;
+      const previousMode = env.NODE_ENV;
+      env.NODE_ENV = 'development';
+      const count = brevoMock.messages.length;
+      try {
+        assert.equal((await register(newEmail())).status, 503);
+        assert.equal((await request('/auth/forgot-password', { email: newEmail() })).status, 503);
+        assert.equal(brevoMock.messages.length, count);
+      } finally { env.NODE_ENV = previousMode; env.BREVO_API_KEY = previousKey; }
+    });
+
+    await t.test('rotas de recuperação e redefinição limitam tentativas', async () => {
+      let recoveryStatus = 200;
+      for (let index = 0; index < 12 && recoveryStatus !== 429; index++) {
+        recoveryStatus = (await request('/auth/forgot-password', { email: newEmail() })).status;
+      }
+      assert.equal(recoveryStatus, 429);
+      let resetStatus = 400;
+      for (let index = 0; index < 32 && resetStatus !== 429; index++) {
+        resetStatus = (await request('/auth/reset-password', { token: 'invalido', password: nextPassword })).status;
+      }
+      assert.equal(resetStatus, 429);
     });
   } finally {
     try {

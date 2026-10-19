@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { app } from '../src/app.js';
 import { prisma } from '../src/lib/prisma.js';
 import { env } from '../src/config/env.js';
-import { signToken } from '../src/utils/jwt.js';
+import { sessionVersion, signToken } from '../src/utils/jwt.js';
 
 import { hashPassword } from '../src/utils/hashPassword.js';
 import { DEFAULT_CATEGORIES } from '../src/utils/defaultCategories.js';
@@ -36,7 +36,9 @@ test('Sprint 5: autenticação, isolamento, aportes simultâneos, datas e relat�
       });
       ids.push(u.id_usuario);
     }
-    const userA=ids[0]!, userB=ids[1]!; const tokenA=signToken({userId:userA}), tokenB=signToken({userId:userB});
+    const userA=ids[0]!, userB=ids[1]!;
+    const credentialsA=await prisma.usuarios.findUniqueOrThrow({where:{id_usuario:userA}}),credentialsB=await prisma.usuarios.findUniqueOrThrow({where:{id_usuario:userB}});
+    const tokenA=signToken({userId:userA,credentialVersion:sessionVersion(credentialsA)}),tokenB=signToken({userId:userB,credentialVersion:sessionVersion(credentialsB)});
     const login=await request('POST','/auth/login',{email:'sprint-A-' + suffix + '@example.com',password:'TesteSprint5!123'});assert.equal(login.status,200);assert.ok(login.data.token);
     assert.equal((await request('GET','/goals')).status,401);
     const income = await request('POST','/categories',{nome:'Receita de teste',tipo:'receita'},tokenA);assert.equal(income.status,201);

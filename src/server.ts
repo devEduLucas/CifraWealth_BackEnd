@@ -6,7 +6,7 @@ app.listen(env.PORT, () => {
   console.log(`Servidor rodando na porta ${env.PORT} [${env.NODE_ENV}]`);
   if (env.NODE_ENV === "development" && !isBrevoDeliveryConfigured()) {
     console.warn(
-      "Aviso: Chave da Brevo (BREVO_API_KEY) não configurada no .env. Em modo desenvolvimento, os links de ativação serão exibidos no console."
+      "Cadastro e recuperação por e-mail indisponíveis: configure BREVO_API_KEY, BREVO_SENDER_EMAIL, FRONTEND_URL e EMAIL_VERIFICATION_SECRET no .env. Veja o README."
     );
   }
 });

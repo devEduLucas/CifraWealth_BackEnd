@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { AppError } from "../utils/AppError.js";
-import { verifyToken } from "../utils/jwt.js";
+import { matchesSessionVersion, verifyToken } from "../utils/jwt.js";
 import { userRepository } from "../repositories/user.repository.js";
 
 declare global {
@@ -24,8 +24,12 @@ export async function authMiddleware(req: Request, _res: Response, next: NextFun
   try {
     const payload = verifyToken(token);
     const user = await userRepository.findById(payload.userId);
-    if (!user) {
+    if (!user || user.email_verificado !== true) {
       next(new AppError("Usuário não encontrado ou inativo.", 401));
+      return;
+    }
+    if (!matchesSessionVersion(payload.credentialVersion, user)) {
+      next(new AppError("Sua sessão expirou. Faça login novamente.", 401));
       return;
     }
     req.userId = payload.userId;
