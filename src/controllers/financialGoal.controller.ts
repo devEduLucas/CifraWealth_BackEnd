@@ -64,6 +64,12 @@ export const financialGoalController = {
     }
   },
 
+  async withdraw(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      res.status(200).json(await financialGoalService.withdraw(parseIdParam(req), getUserId(req), req.body));
+    } catch (error) { next(error); }
+  },
+
   async remove(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const userId = getUserId(req);

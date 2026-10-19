@@ -84,6 +84,10 @@ export const financialGoalService = {
     return toGoalResponse(goal);
   },
 
+  async withdraw(id: number, userId: number, input: ContributeGoalInput): Promise<GoalResponse> {
+    return toGoalResponse(await financialGoalRepository.withdraw(id, userId, toDecimal(input.valor)));
+  },
+
   async remove(id: number, userId: number): Promise<void> {
     await financialGoalService.getById(id, userId);
     await financialGoalRepository.delete(id, userId);

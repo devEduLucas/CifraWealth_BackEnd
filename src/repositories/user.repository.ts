@@ -90,9 +90,9 @@ export const userRepository = {
     });
   },
 
-  updatePassword(userId: number, passwordHash: string): Promise<usuarios> {
-    return prisma.usuarios.update({
-      where: { id_usuario: userId },
+  updatePasswordIfCurrent(current: usuarios, passwordHash: string) {
+    return prisma.usuarios.updateMany({
+      where: { id_usuario: current.id_usuario, senha: current.senha, email: current.email, google_id: current.google_id },
       data: { senha: passwordHash, email_verificado: true },
     });
   },

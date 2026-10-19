@@ -5,10 +5,11 @@ import { randomUUID } from 'node:crypto';
 import { app } from '../src/app.js';
 import { prisma } from '../src/lib/prisma.js';
 import { env } from '../src/config/env.js';
-import { signToken } from '../src/utils/jwt.js';
+import { sessionVersion, signToken } from '../src/utils/jwt.js';
 
 import { hashPassword } from '../src/utils/hashPassword.js';
 import { DEFAULT_CATEGORIES } from '../src/utils/defaultCategories.js';
+import { todayDateOnly } from '../src/utils/formatDate.js';
 
 test('Sprint 5: autenticação, isolamento, aportes simultâneos, datas e relatório real', async () => {
   const databaseHost = new URL(env.DATABASE_URL).hostname;
@@ -36,12 +37,17 @@ test('Sprint 5: autenticação, isolamento, aportes simultâneos, datas e relat�
       });
       ids.push(u.id_usuario);
     }
-    const userA=ids[0]!, userB=ids[1]!; const tokenA=signToken({userId:userA}), tokenB=signToken({userId:userB});
+    const userA=ids[0]!, userB=ids[1]!;
+    const credentialsA=await prisma.usuarios.findUniqueOrThrow({where:{id_usuario:userA}}),credentialsB=await prisma.usuarios.findUniqueOrThrow({where:{id_usuario:userB}});
+    const tokenA=signToken({userId:userA,credentialVersion:sessionVersion(credentialsA)}),tokenB=signToken({userId:userB,credentialVersion:sessionVersion(credentialsB)});
     const login=await request('POST','/auth/login',{email:'sprint-A-' + suffix + '@example.com',password:'TesteSprint5!123'});assert.equal(login.status,200);assert.ok(login.data.token);
     assert.equal((await request('GET','/goals')).status,401);
     const income = await request('POST','/categories',{nome:'Receita de teste',tipo:'receita'},tokenA);assert.equal(income.status,201);
     assert.equal((await request('GET','/categories',undefined,tokenA)).data.length, DEFAULT_CATEGORIES.length + 1);
     assert.equal((await request('POST','/categories',{nome:'Receita de teste',tipo:'receita'},tokenA)).status,409);
+    const simultaneousCategories = await Promise.all(Array.from({ length: 6 }, () => request('POST','/categories',{nome:'Categoria concorrente',tipo:'despesa'},tokenA)));
+    assert.equal(simultaneousCategories.filter((item) => item.status === 201).length, 1);
+    assert.equal(simultaneousCategories.filter((item) => item.status === 409).length, 5);
     const expense = await request('POST','/categories',{nome:'Despesa de teste',tipo:'despesa'},tokenA);assert.equal(expense.status,201);
     const categoryId=income.data.id_categoria, expenseId=expense.data.id_categoria;
     assert.equal((await request('GET','/categories',undefined,tokenB)).data.some((item: {id_categoria:number})=>item.id_categoria===categoryId),false);
@@ -60,6 +66,13 @@ test('Sprint 5: autenticação, isolamento, aportes simultâneos, datas e relat�
     assert.equal((await request('PUT','/goals/'+goalId,{data_inicio:'2026-10-25',data_fim:'2026-10-05'},tokenA)).status,400);
     await request('PUT','/goals/'+goalId,{status:'cancelada'},tokenA);
     assert.equal((await request('POST','/goals/'+goalId+'/contribute',{valor:10},tokenA)).status,400);
+    assert.equal((await request('POST','/goals/'+goalId+'/withdraw',{valor:10},tokenA)).status,400);
+    assert.equal((await request('PUT','/goals/'+goalId,{valor_atual:1.005},tokenA)).status,400);
+    assert.equal((await request('PUT','/goals/'+goalId,{status:'em_andamento'},tokenA)).status,200);
+    assert.equal((await request('POST','/goals/'+goalId+'/withdraw',{valor:10},tokenB)).status,404);
+    const withdrawals = await Promise.all([80,80].map((valor) => request('POST','/goals/'+goalId+'/withdraw',{valor},tokenA)));
+    assert.deepEqual(withdrawals.map((item) => item.status).sort(), [200,400]);
+    assert.equal((await request('GET','/goals/'+goalId,undefined,tokenA)).data.valor_atual,20);
     const createTx=(valor:number,tipo:'receita'|'despesa',date:string,token=tokenA,status='confirmada')=>request('POST','/transactions',{valor,tipo,data_transacao:date,id_categoria:tipo==='receita'?categoryId:expenseId,descricao:'Movimentação Sprint 5',status},token);
     assert.equal((await createTx(10,'receita','2026-10-05',tokenB)).status,404);
     assert.equal((await request('POST','/transactions',{valor:10,tipo:'despesa',data_transacao:'2026-10-05',id_categoria:categoryId,descricao:'Tipo incorreto'},tokenA)).status,400);
@@ -82,6 +95,21 @@ test('Sprint 5: autenticação, isolamento, aportes simultâneos, datas e relat�
     const filtered=await request('GET','/transactions?data_inicio=2026-10-31&data_fim=2026-10-31',undefined,tokenA);assert.equal(filtered.data.length,1);
     const monthly=await request('GET','/reports/monthly?ano=2026',undefined,tokenA);assert.equal(monthly.data[9].saldo,849.75);
     const dashboard=await request('GET','/dashboard',undefined,tokenA);assert.equal(dashboard.status,200);
+    const today = todayDateOnly();
+    const nextDay = new Date(today + 'T12:00:00Z'); nextDay.setUTCDate(nextDay.getUTCDate()+1);
+    const future = nextDay.toISOString().slice(0,10);
+    assert.equal((await createTx(11,'receita',today)).status,201);
+    assert.equal((await createTx(200,'receita',future)).status,201);
+    const automaticPending = await request('POST','/transactions',{valor:300,tipo:'receita',data_transacao:future,id_categoria:categoryId,descricao:'Prevista automaticamente'},tokenA);
+    assert.equal(automaticPending.status,201); assert.equal(automaticPending.data.status,'pendente');
+    const allTransactions = (await request('GET','/transactions',undefined,tokenA)).data as Array<{valor:number;tipo:string;status:string;data_transacao:string}>;
+    const realized = allTransactions.filter((item) => item.status === 'confirmada' && item.data_transacao <= today);
+    const expectedCents = realized.reduce((sum,item) => sum + (item.tipo === 'receita' ? 1 : -1) * Math.round(item.valor * 100), 0);
+    assert.equal((await request('GET','/dashboard',undefined,tokenA)).data.saldo,expectedCents / 100);
+    assert.equal((await request('GET','/dashboard?data_fim='+future,undefined,tokenA)).data.saldo,expectedCents / 100);
+    const limitedMonthly = (await request('GET','/reports/monthly?ano='+today.slice(0,4)+'&data_fim='+today,undefined,tokenA)).data;
+    const currentMonthCents = realized.filter((item) => item.data_transacao.startsWith(today.slice(0,7))).reduce((sum,item) => sum + (item.tipo === 'receita' ? 1 : -1) * Math.round(item.valor * 100), 0);
+    assert.equal(limitedMonthly[Number(today.slice(5,7))-1].saldo,currentMonthCents / 100);
     // Cleanup of our own resources also exercises successful delete routes.
     for (const transaction of (await request('GET','/transactions',undefined,tokenA)).data) assert.equal((await request('DELETE','/transactions/'+transaction.id_transacao,undefined,tokenA)).status,204);
     assert.equal((await request('DELETE','/categories/'+categoryId,undefined,tokenA)).status,204);

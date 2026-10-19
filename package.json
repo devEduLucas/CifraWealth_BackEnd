@@ -12,7 +12,7 @@
     "typecheck:tests": "tsc -p tsconfig.test.json",
     "prisma:generate": "prisma generate",
     "postinstall": "prisma generate",
-    "test": "node --import tsx --test test/reports.test.ts",
+    "test": "node --import tsx --test test/reports.test.ts test/authTokens.test.ts",
     "test:integration": "node --import tsx --test test/sprint5.integration.ts test/auth.integration.ts",
     "db:seed": "prisma db seed",
     "prisma:migrate": "prisma migrate deploy"
@@ -38,6 +38,12 @@
     "@types/node": "^22.10.2",
     "tsx": "^4.23.1",
     "typescript": "^5.7.2"
+  },
+  "overrides": {
+    "proxy-addr": "2.0.8",
+    "qs": "6.16.0",
+    "@prisma/config": { "deepmerge-ts": "8.0.2" },
+    "gaxios": { "uuid": "11.1.1" }
   },
   "license": "ISC"
 }

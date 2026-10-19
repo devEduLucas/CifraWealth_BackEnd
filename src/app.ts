@@ -39,6 +39,20 @@ app.use("/api/auth/login", authLimiter);
 app.use("/api/users/register", authLimiter);
 app.use("/api/users/verify-email", authLimiter);
 app.use("/api/users/resend-verification", resendLimiter);
+app.use("/api/auth/forgot-password", rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Limite de solicitações de recuperação atingido. Tente novamente mais tarde." },
+}));
+app.use("/api/auth/reset-password", rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Muitas tentativas de redefinição. Aguarde alguns minutos antes de tentar novamente." },
+}));
 
 app.use("/api", router);
 

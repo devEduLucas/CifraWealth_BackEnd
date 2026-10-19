@@ -31,6 +31,7 @@ const envSchema = z.object({
   BREVO_API_KEY: optionalEnvString,
   BREVO_SENDER_EMAIL: optionalEmailEnv,
   BREVO_SENDER_NAME: optionalEnvString.default("Cifra Wealth"),
+  BREVO_TIMEOUT_MS: z.coerce.number().int().min(100).max(30_000).default(10_000),
   // Suporte a URL customizada da Brevo (para testes/mocks)
   BREVO_API_URL: z.preprocess(
     (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),

@@ -1,15 +1,16 @@
 import { categoryRepository } from "../repositories/category.repository.js";
 import { dashboardRepository } from "../repositories/dashboard.repository.js";
 import type { DashboardFilters } from "../repositories/dashboard.repository.js";
-import { parseDateOnly } from "../utils/formatDate.js";
+import { parseDateOnly, todayDateOnly } from "../utils/formatDate.js";
 import { toMoneyNumber } from "../utils/money.js";
 import type { DashboardQuery, DashboardResponse } from "../types/dashboard.types.js";
 
 export const dashboardService = {
   async getSummary(userId: number, query: DashboardQuery): Promise<DashboardResponse> {
+    const today = todayDateOnly();
     const filters: DashboardFilters = {
       ...(query.data_inicio !== undefined && { data_inicio: parseDateOnly(query.data_inicio) }),
-      ...(query.data_fim !== undefined && { data_fim: parseDateOnly(query.data_fim) }),
+      data_fim: parseDateOnly(query.data_fim && query.data_fim < today ? query.data_fim : today),
     };
 
     const [totals, breakdown, categories] = await Promise.all([
@@ -36,7 +37,7 @@ export const dashboardService = {
       .filter((item): item is NonNullable<typeof item> => item !== null);
 
     return {
-      saldo: total_receitas - total_despesas,
+      saldo: (Math.round(total_receitas * 100) - Math.round(total_despesas * 100)) / 100,
       total_receitas,
       total_despesas,
       por_categoria,

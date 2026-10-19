@@ -3,10 +3,10 @@ import { userRepository } from "../repositories/user.repository.js";
 import { toUserResponse } from "./user.service.js";
 import { AppError } from "../utils/AppError.js";
 import { comparePassword, hashPassword } from "../utils/hashPassword.js";
-import { signToken } from "../utils/jwt.js";
+import { sessionVersion, signToken } from "../utils/jwt.js";
 import { env } from "../config/env.js";
 import { createPasswordResetToken, matchesPasswordResetToken, readPasswordResetToken } from "../utils/PasswordResetToken.js";
-import { sendPasswordResetEmail } from "./email.service.js";
+import { isEmailDeliveryConfigured, sendPasswordResetEmail } from "./email.service.js";
 import type { AuthResponse, ForgotPasswordInput, GoogleLoginInput, LoginUserInput, ResetPasswordInput } from "../types/user.types.js";
 
 const googleClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
@@ -37,7 +37,7 @@ export const authService = {
 
     await userRepository.updateLastLogin(user.id_usuario);
 
-    const token = signToken({ userId: user.id_usuario });
+    const token = signToken({ userId: user.id_usuario, credentialVersion: sessionVersion(user) });
 
     return { user: toUserResponse(user), token };
   },
@@ -87,12 +87,15 @@ export const authService = {
 
     await userRepository.updateLastLogin(user.id_usuario);
 
-    const token = signToken({ userId: user.id_usuario });
+    const token = signToken({ userId: user.id_usuario, credentialVersion: sessionVersion(user) });
 
     return { user: toUserResponse(user), token };
   },
 
   async forgotPassword(input: ForgotPasswordInput): Promise<{ message: string }> {
+    if (!isEmailDeliveryConfigured()) {
+      throw new AppError("A recuperação de senha está temporariamente indisponível: falta configurar o envio de e-mails no servidor.", 503);
+    }
     const genericResponse = {
       message: "Se o e-mail informado estiver cadastrado em nossa plataforma, você receberá as instruções de recuperação em instantes.",
     };
@@ -124,7 +127,10 @@ export const authService = {
     }
 
     const newPasswordHash = await hashPassword(input.password);
-    await userRepository.updatePassword(user.id_usuario, newPasswordHash);
+    const result = await userRepository.updatePasswordIfCurrent(user, newPasswordHash);
+    if (result.count !== 1) {
+      throw new AppError("O link de redefinição é inválido ou já foi utilizado. Solicite um novo link se necessário.", 400);
+    }
 
     return { message: "Senha redefinida com sucesso! Você já pode entrar com sua nova senha." };
   },

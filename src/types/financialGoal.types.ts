@@ -16,7 +16,7 @@ export const createGoalSchema = goalFields.refine(datesInOrder, "Prazo deve ser 
 export const updateGoalSchema = goalFields
   .partial()
   .extend({
-    valor_atual: z.number().finite().min(0, "Valor atual não pode ser negativo.").max(99999999.99, "Valor máximo excedido.").optional(),
+    valor_atual: z.number().finite().min(0, "Valor atual não pode ser negativo.").max(99999999.99, "Valor máximo excedido.").refine((value) => Math.abs(value * 100 - Math.round(value * 100)) < 0.00001, "Use no máximo duas casas decimais.").optional(),
     status: goalStatusSchema.optional(),
   })
   .refine(datesInOrder, "Prazo deve ser igual ou posterior à data de início.");

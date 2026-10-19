@@ -1,55 +1,48 @@
 import { env } from "../config/env.js";
 import { AppError } from "../utils/AppError.js";
 
-/**
- * Verifica se as credenciais da Brevo estão configuradas no ambiente.
- */
 export function isBrevoDeliveryConfigured(): boolean {
-  return Boolean(
-    env.BREVO_API_KEY &&
-      env.BREVO_SENDER_EMAIL &&
-      env.FRONTEND_URL &&
-      env.EMAIL_VERIFICATION_SECRET
-  );
+  return Boolean(env.BREVO_API_KEY && env.BREVO_SENDER_EMAIL && env.FRONTEND_URL && env.EMAIL_VERIFICATION_SECRET);
 }
 
-/**
- * Verifica se o envio de e-mails está disponível para o usuário.
- * Em desenvolvimento, permite prosseguir sem a chave da Brevo
- * através de simulação com link exibido no console.
- */
-export function isEmailDeliveryConfigured(): boolean {
-  if (env.NODE_ENV === "development") {
-    return Boolean(env.FRONTEND_URL && env.EMAIL_VERIFICATION_SECRET);
-  }
-  return isBrevoDeliveryConfigured();
+export function isEmailDeliveryConfigured(): boolean { return isBrevoDeliveryConfigured(); }
+
+function requireDelivery() {
+  if (!isBrevoDeliveryConfigured()) throw new AppError("O envio de e-mails está temporariamente indisponível. Configure a Brevo no servidor.", 503);
 }
 
-/**
- * Envia o e-mail de confirmação de cadastro via API REST oficial da Brevo (HTTPS porta 443).
- * Em modo de desenvolvimento, caso a chave não esteja presente, exibe o link no console.
- */
-export async function sendVerificationEmail(email: string, token: string): Promise<void> {
-  const frontendUrl = env.FRONTEND_URL ? env.FRONTEND_URL.replace(/\/+$/, "") : "http://localhost:5173";
-  const verificationUrl = `${frontendUrl}/verify-email?token=${encodeURIComponent(token)}`;
+interface BrevoPayload {
+  sender: { name: string; email: string };
+  to: Array<{ email: string }>;
+  subject: string;
+  htmlContent: string;
+  textContent: string;
+}
 
-  // Simulação amigável em ambiente de desenvolvimento quando a chave não estiver configurada
-  if (!isBrevoDeliveryConfigured()) {
-    if (env.NODE_ENV === "development") {
-      console.log("\n========================================================");
-      console.log("📨 [DEV] SIMULAÇÃO DE E-MAIL DE CONFIRMAÇÃO (BREVO NÃO CONFIGURADO)");
-      console.log(`Destinatário: ${email}`);
-      console.log("Link de Ativação:");
-      console.log(verificationUrl);
-      console.log("========================================================\n");
-      return;
+async function deliver(payload: BrevoPayload, failureMessage: string) {
+  try {
+    const response = await fetch(env.BREVO_API_URL, {
+      method: "POST",
+      headers: { accept: "application/json", "api-key": env.BREVO_API_KEY!, "content-type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(env.BREVO_TIMEOUT_MS),
+    });
+    await response.body?.cancel();
+    if (!response.ok) {
+      console.error("Falha no envio Brevo. HTTP:", response.status);
+      throw new AppError(failureMessage, 502);
     }
-
-    throw new AppError(
-      "A confirmação por e-mail ainda não está configurada no servidor. Configure as variáveis da Brevo (BREVO_API_KEY e BREVO_SENDER_EMAIL) para habilitar cadastros.",
-      503
-    );
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    // Do not log request data, provider response bodies, tokens or recipient addresses.
+    console.error("Falha no envio Brevo:", error instanceof Error ? error.name : "DELIVERY_ERROR");
+    throw new AppError(failureMessage, 502);
   }
+}
+
+export async function sendVerificationEmail(email: string, token: string): Promise<void> {
+  requireDelivery();
+  const verificationUrl = `${env.FRONTEND_URL!.replace(/\/+$/, "")}/verify-email?token=${encodeURIComponent(token)}`;
 
   const emailPayload = {
     sender: {
@@ -88,53 +81,12 @@ export async function sendVerificationEmail(email: string, token: string): Promi
     ].join("\n"),
   };
 
-  try {
-    const response = await fetch(env.BREVO_API_URL, {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        "api-key": env.BREVO_API_KEY!,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify(emailPayload),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
-      console.error(`Falha na API Brevo HTTP ${response.status}:`, errorText);
-      throw new Error(`Brevo HTTP ${response.status}`);
-    }
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    console.error("Falha no serviço de envio de e-mail Brevo:", error);
-    throw new AppError("Não foi possível enviar o e-mail de confirmação. Tente novamente mais tarde.", 502);
-  }
+  await deliver(emailPayload, "Não foi possível enviar o e-mail de confirmação. Tente novamente mais tarde.");
 }
 
-/**
- * Envia o e-mail de redefinição de senha via API REST oficial da Brevo (HTTPS porta 443).
- * Em modo de desenvolvimento, caso a chave não esteja presente, exibe o link no console.
- */
 export async function sendPasswordResetEmail(email: string, token: string): Promise<void> {
-  const frontendUrl = env.FRONTEND_URL ? env.FRONTEND_URL.replace(/\/+$/, "") : "http://localhost:5173";
-  const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
-
-  if (!isBrevoDeliveryConfigured()) {
-    if (env.NODE_ENV === "development") {
-      console.log("\n========================================================");
-      console.log("🔑 [DEV] SIMULAÇÃO DE RECUPERAÇÃO DE SENHA (BREVO NÃO CONFIGURADO)");
-      console.log(`Destinatário: ${email}`);
-      console.log("Link de Redefinição de Senha:");
-      console.log(resetUrl);
-      console.log("========================================================\n");
-      return;
-    }
-
-    throw new AppError(
-      "O envio de e-mails ainda não está configurado no servidor. Configure as variáveis da Brevo (BREVO_API_KEY e BREVO_SENDER_EMAIL).",
-      503
-    );
-  }
+  requireDelivery();
+  const resetUrl = `${env.FRONTEND_URL!.replace(/\/+$/, "")}/reset-password?token=${encodeURIComponent(token)}`;
 
   const emailPayload = {
     sender: {
@@ -172,25 +124,5 @@ export async function sendPasswordResetEmail(email: string, token: string): Prom
     ].join("\n"),
   };
 
-  try {
-    const response = await fetch(env.BREVO_API_URL, {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        "api-key": env.BREVO_API_KEY!,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify(emailPayload),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
-      console.error(`Falha na API Brevo HTTP ${response.status}:`, errorText);
-      throw new Error(`Brevo HTTP ${response.status}`);
-    }
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    console.error("Falha ao enviar e-mail de recuperação de senha:", error);
-    throw new AppError("Não foi possível enviar o e-mail de recuperação. Tente novamente mais tarde.", 502);
-  }
+  await deliver(emailPayload, "Não foi possível enviar o e-mail de recuperação. Tente novamente mais tarde.");
 }

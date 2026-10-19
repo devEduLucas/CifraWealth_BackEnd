@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { dateOnlySchema, datesInOrder } from "../utils/validationSchemas.js";
 
-export const monthlyReportQuerySchema = z.object({ ano: z.coerce.number().int().min(2000).max(2100).default(new Date().getFullYear()) });
+export const monthlyReportQuerySchema = z.object({ ano: z.coerce.number().int().min(2000).max(2100).default(new Date().getFullYear()), data_fim: dateOnlySchema.optional() });
 export const detailedReportQuerySchema = z.object({ data_inicio: dateOnlySchema, data_fim: dateOnlySchema })
   .refine(datesInOrder, "Data inicial deve ser igual ou anterior à data final.")
   .refine((value) => new Date(value.data_fim).getTime() - new Date(value.data_inicio).getTime() <= 366 * 5 * 86400000, "Selecione um período de até cinco anos.");
