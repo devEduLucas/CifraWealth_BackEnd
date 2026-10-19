@@ -14,14 +14,22 @@ O cliente em src/generated/prisma é gerado no postinstall. Ele ainda é version
 
 ## Cadastro e confirmação de e-mail
 
-- Preencha SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS e SMTP_FROM com os dados do seu provedor. Para conexão TLS desde o início, use a porta e SMTP_SECURE=true indicados pelo provedor; para STARTTLS, use SMTP_SECURE=false.
+- O envio usa a API HTTPS da Brevo. Preencha BREVO_API_KEY com a chave de API e BREVO_SENDER_EMAIL com um remetente validado na sua conta Brevo; BREVO_SENDER_NAME define o nome exibido. A configuração de SMTP/Gmail da versão anterior não é usada.
 - Configure FRONTEND_URL e EMAIL_VERIFICATION_SECRET com um segredo aleatório de pelo menos 32 caracteres, diferente de JWT_SECRET. Para gerar cada segredo, execute `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` e guarde o resultado somente no .env.
-- Sem configuração completa de envio, cadastro e reenvio retornam 503. A aplicação não simula envio nem libera contas automaticamente. Login com Google pode funcionar independentemente do SMTP quando configurado.
+- Sem configuração completa de envio, cadastro, reenvio e recuperação de senha retornam 503, inclusive no desenvolvimento. Links e tokens não são exibidos nos logs. A simulação existe somente nos testes locais; login por senha de contas já confirmadas e login Google não dependem de envio de e-mails.
+- BREVO_TIMEOUT_MS limita a espera pelo provedor (padrão 10000 ms, entre 100 e 30000). Falhas e timeout retornam 502. BREVO_API_URL usa o endpoint oficial por padrão e permite apontar os testes para um mock HTTP local.
 - POST /api/users/register recebe fullName, email e password, cria uma conta pendente e retorna email/message. O link recebido abre /verify-email; para ativar, informe a mesma senha daquela tentativa.
 - POST /api/users/verify-email exige token e password. O token dura 24 horas, é vinculado às credenciais e não serve para acessar a API. Links de versões anteriores devem ser reenviados após esta atualização.
 - Repetir um cadastro pendente após um minuto atualiza suas credenciais e invalida o link anterior. Durante esse minuto, o servidor retorna 429 sem alterar a senha. Confirmar exige tanto o link quanto a senha correspondente.
 - POST /api/users/resend-verification recebe email e respeita o intervalo de um minuto. A resposta é genérica; contas confirmadas não recebem novo link.
 - Falha no envio remove somente a tentativa ainda pendente e correspondente àquela senha, preservando contas ativadas ou atualizadas durante o envio. Tokens e links completos não são escritos nos logs.
+
+## Recuperação de senha e sessões
+
+- POST /api/auth/forgot-password recebe email. Para contas ausentes ou exclusivas do Google, a resposta é genérica. Contas com senha recebem um link de recuperação com validade de uma hora quando o provedor está configurado.
+- POST /api/auth/reset-password recebe token e password. A atualização condicional permite usar o link uma única vez, inclusive em requisições simultâneas. A senha segue os limites de 8 caracteres e 72 bytes.
+- Recuperação limita solicitações a 10 por hora por IP; redefinição permite até 30 tentativas por 15 minutos por IP.
+- Sessões são vinculadas por HMAC às credenciais atuais. Trocar a senha invalida os tokens anteriores imediatamente, sem alteração de schema. Ao atualizar uma instalação anterior a essa proteção, os usuários precisam entrar novamente uma vez.
 
 Reinicie o backend após alterar o .env. Em produção, use as URLs HTTPS do ambiente em CORS_ORIGIN/FRONTEND_URL e configure o frontend com a URL pública desta API.
 
@@ -46,9 +54,20 @@ A migration 20261012150000_email_verification_backfill mantém o acesso das cont
 
 A reserva de uma meta é um registro manual do dinheiro já guardado. Não representa transferência bancária nem despesa. Valores monetários são persistidos como Decimal; relatórios somam centavos inteiros.
 
+## Correções da avaliação de usabilidade
+
+- O dashboard considera somente transações confirmadas até a data atual em `America/Sao_Paulo`. Um `data_fim` futuro não antecipa o saldo realizado. O saldo não representa consulta bancária, saldo inicial ou reservas das metas.
+- Criação de transação sem `status`: datas futuras começam como `pendente`; demais datas começam como `confirmada`. A interface oferece edição e confirmação de pendências. Lançamentos futuros são identificados como previstos.
+- `GET /api/reports/monthly?ano=2026&data_fim=2026-10-18` aceita um corte opcional por data, usado no dashboard. Relatórios personalizados mantêm seu período explícito e consideram somente registros confirmados.
+- `POST /api/goals/:id/withdraw` recebe `{ "valor": 100 }`, valida saldo suficiente e registra a retirada com o mesmo bloqueio de linha usado nos aportes. O progresso e a situação são recalculados. `PUT /api/goals/:id` com `valor_atual` corrige o total, incluindo zero; aceita até duas casas decimais. Essas operações não criam despesas ou transferências.
+- A migração `20261018230000_unique_user_categories` adiciona unicidade por usuário, nome e tipo. Não exclui, renomeia nem consolida categorias. Se um ambiente já tiver duplicatas, elas precisam ser avaliadas antes da aplicação; o índice falha preservando esses registros.
+- Os `overrides` fixam versões corrigidas de `proxy-addr`, `qs`, `deepmerge-ts` e `uuid`, preservando Prisma 6 e a interface atual de autenticação. Ao removê-los no futuro, confira as versões transitivas e rode os testes e o audit novamente.
+
+Depois de instalar as dependências, aplique `npm run prisma:migrate` antes de iniciar o backend. Para executar `npm run prisma:generate` no Windows, pare o backend primeiro: o processo em execução pode manter a DLL do Prisma bloqueada. Não use `migrate reset` nem restaure arquivos gerados para tentar corrigir esse bloqueio.
+
 ## Testes
 
 - npm run typecheck, npm run typecheck:tests e npm run build. A verificação dos testes inclui os arquivos fora de src para detectar referências removidas.
-- npm test: cálculos, centavos, datas, períodos vazios e comparações. Não depende do frontend.
-- npm run test:integration: API e MySQL local, com contas temporárias e limpeza restrita aos dados dos testes. Cobre categorias por usuário, acesso cruzado, aportes simultâneos, conclusão/reabertura, datas, transações pendentes e relatórios. Também verifica cadastro, senha/link vinculados, confirmação, reenvio e falha de envio com um servidor SMTP local em memória, sem mensagens para destinatários externos.
+- npm test: cálculos, centavos, datas, períodos vazios, comparações, finalidade dos tokens e invalidação de sessões. Não depende do frontend.
+- npm run test:integration: API e MySQL local, com contas temporárias e limpeza restrita aos dados dos testes. Cobre categorias por usuário, acesso cruzado, aportes simultâneos, conclusão/reabertura, datas, transações pendentes e relatórios. Também verifica cadastro, confirmação, recuperação, concorrência na redefinição, sessões antigas, limites de requisições e falha/timeout de envio com mock HTTP local da Brevo, sem mensagens para destinatários externos.
 - No frontend, npm run test:e2e executa os fluxos no Chrome em desktop e celular.
