@@ -771,6 +771,7 @@ export const UsuariosScalarFieldEnum = {
   senha: 'senha',
   google_id: 'google_id',
   foto_perfil: 'foto_perfil',
+  capa_perfil: 'capa_perfil',
   email_verificado: 'email_verificado',
   ultimo_login: 'ultimo_login',
   created_at: 'created_at',
@@ -826,7 +827,8 @@ export const usuariosOrderByRelevanceFieldEnum = {
   email: 'email',
   senha: 'senha',
   google_id: 'google_id',
-  foto_perfil: 'foto_perfil'
+  foto_perfil: 'foto_perfil',
+  capa_perfil: 'capa_perfil'
 } as const
 
 export type usuariosOrderByRelevanceFieldEnum = (typeof usuariosOrderByRelevanceFieldEnum)[keyof typeof usuariosOrderByRelevanceFieldEnum]

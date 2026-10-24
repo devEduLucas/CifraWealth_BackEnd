@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { AppError } from "../utils/AppError.js";
-import { matchesSessionVersion, verifyToken } from "../utils/jwt.js";
+import { matchesSessionVersion, verifyToken, type TokenPayload } from "../utils/jwt.js";
 import { userRepository } from "../repositories/user.repository.js";
 
 declare global {
@@ -21,8 +21,15 @@ export async function authMiddleware(req: Request, _res: Response, next: NextFun
 
   const token = authHeader.slice("Bearer ".length);
 
+  let payload: TokenPayload;
   try {
-    const payload = verifyToken(token);
+    payload = verifyToken(token);
+  } catch {
+    next(new AppError("Token de acesso inválido ou expirado.", 401));
+    return;
+  }
+
+  try {
     const user = await userRepository.findById(payload.userId);
     if (!user || user.email_verificado !== true) {
       next(new AppError("Usuário não encontrado ou inativo.", 401));
@@ -34,7 +41,8 @@ export async function authMiddleware(req: Request, _res: Response, next: NextFun
     }
     req.userId = payload.userId;
     next();
-  } catch {
-    next(new AppError("Token de acesso inválido ou expirado.", 401));
+  } catch (error) {
+    // A repository outage must not invalidate an otherwise valid session.
+    next(error);
   }
 }

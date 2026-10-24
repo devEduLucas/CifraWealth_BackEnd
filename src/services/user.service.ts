@@ -19,12 +19,20 @@ export function toUserResponse(user: {
   nome: string;
   sobrenome: string | null;
   email: string;
+  foto_perfil?: string | null;
+  capa_perfil?: string | null;
+  senha?: string | null;
+  google_id?: string | null;
 }): UserResponse {
   return {
     id_usuario: user.id_usuario,
     nome: user.nome,
     sobrenome: user.sobrenome,
     email: user.email,
+    foto_perfil: user.foto_perfil ?? null,
+    capa_perfil: user.capa_perfil ?? null,
+    tem_senha: Boolean(user.senha),
+    acesso_google: Boolean(user.google_id),
   };
 }
 
