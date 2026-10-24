@@ -19,6 +19,25 @@ export interface CreateGoogleUserData {
 }
 
 export const userRepository = {
+  updateProfile(userId: number, data: { nome: string; sobrenome: string | null; foto_perfil?: string | null; capa_perfil?: string | null }): Promise<usuarios> {
+    return prisma.usuarios.update({ where: { id_usuario: userId }, data });
+  },
+
+  deleteIfCurrent(current: usuarios) {
+    return prisma.$transaction(async (tx) => {
+      const locked = await tx.usuarios.updateMany({
+        where: { id_usuario: current.id_usuario, senha: current.senha, email: current.email, google_id: current.google_id },
+        data: { updated_at: new Date() },
+      });
+      if (locked.count !== 1) throw new AppError('Sua conta mudou durante a confirmação. Tente novamente.', 409);
+      // Remove children in dependency order and commit only when the account can also be removed.
+      await tx.transacoes.deleteMany({ where: { id_usuario: current.id_usuario } });
+      await tx.metas_financeiras.deleteMany({ where: { id_usuario: current.id_usuario } });
+      await tx.categorias.deleteMany({ where: { id_usuario: current.id_usuario } });
+      await tx.usuarios.delete({ where: { id_usuario: current.id_usuario } });
+    });
+  },
+
   findByEmail(email: string): Promise<usuarios | null> {
     return prisma.usuarios.findUnique({ where: { email } });
   },

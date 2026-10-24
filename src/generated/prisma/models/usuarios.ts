@@ -42,6 +42,7 @@ export type UsuariosMinAggregateOutputType = {
   senha: string | null
   google_id: string | null
   foto_perfil: string | null
+  capa_perfil: string | null
   email_verificado: boolean | null
   ultimo_login: Date | null
   created_at: Date | null
@@ -56,6 +57,7 @@ export type UsuariosMaxAggregateOutputType = {
   senha: string | null
   google_id: string | null
   foto_perfil: string | null
+  capa_perfil: string | null
   email_verificado: boolean | null
   ultimo_login: Date | null
   created_at: Date | null
@@ -70,6 +72,7 @@ export type UsuariosCountAggregateOutputType = {
   senha: number
   google_id: number
   foto_perfil: number
+  capa_perfil: number
   email_verificado: number
   ultimo_login: number
   created_at: number
@@ -94,6 +97,7 @@ export type UsuariosMinAggregateInputType = {
   senha?: true
   google_id?: true
   foto_perfil?: true
+  capa_perfil?: true
   email_verificado?: true
   ultimo_login?: true
   created_at?: true
@@ -108,6 +112,7 @@ export type UsuariosMaxAggregateInputType = {
   senha?: true
   google_id?: true
   foto_perfil?: true
+  capa_perfil?: true
   email_verificado?: true
   ultimo_login?: true
   created_at?: true
@@ -122,6 +127,7 @@ export type UsuariosCountAggregateInputType = {
   senha?: true
   google_id?: true
   foto_perfil?: true
+  capa_perfil?: true
   email_verificado?: true
   ultimo_login?: true
   created_at?: true
@@ -223,6 +229,7 @@ export type UsuariosGroupByOutputType = {
   senha: string | null
   google_id: string | null
   foto_perfil: string | null
+  capa_perfil: string | null
   email_verificado: boolean | null
   ultimo_login: Date | null
   created_at: Date | null
@@ -260,6 +267,7 @@ export type usuariosWhereInput = {
   senha?: Prisma.StringNullableFilter<"usuarios"> | string | null
   google_id?: Prisma.StringNullableFilter<"usuarios"> | string | null
   foto_perfil?: Prisma.StringNullableFilter<"usuarios"> | string | null
+  capa_perfil?: Prisma.StringNullableFilter<"usuarios"> | string | null
   email_verificado?: Prisma.BoolNullableFilter<"usuarios"> | boolean | null
   ultimo_login?: Prisma.DateTimeNullableFilter<"usuarios"> | Date | string | null
   created_at?: Prisma.DateTimeNullableFilter<"usuarios"> | Date | string | null
@@ -277,6 +285,7 @@ export type usuariosOrderByWithRelationInput = {
   senha?: Prisma.SortOrderInput | Prisma.SortOrder
   google_id?: Prisma.SortOrderInput | Prisma.SortOrder
   foto_perfil?: Prisma.SortOrderInput | Prisma.SortOrder
+  capa_perfil?: Prisma.SortOrderInput | Prisma.SortOrder
   email_verificado?: Prisma.SortOrderInput | Prisma.SortOrder
   ultimo_login?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -298,6 +307,7 @@ export type usuariosWhereUniqueInput = Prisma.AtLeast<{
   sobrenome?: Prisma.StringNullableFilter<"usuarios"> | string | null
   senha?: Prisma.StringNullableFilter<"usuarios"> | string | null
   foto_perfil?: Prisma.StringNullableFilter<"usuarios"> | string | null
+  capa_perfil?: Prisma.StringNullableFilter<"usuarios"> | string | null
   email_verificado?: Prisma.BoolNullableFilter<"usuarios"> | boolean | null
   ultimo_login?: Prisma.DateTimeNullableFilter<"usuarios"> | Date | string | null
   created_at?: Prisma.DateTimeNullableFilter<"usuarios"> | Date | string | null
@@ -315,6 +325,7 @@ export type usuariosOrderByWithAggregationInput = {
   senha?: Prisma.SortOrderInput | Prisma.SortOrder
   google_id?: Prisma.SortOrderInput | Prisma.SortOrder
   foto_perfil?: Prisma.SortOrderInput | Prisma.SortOrder
+  capa_perfil?: Prisma.SortOrderInput | Prisma.SortOrder
   email_verificado?: Prisma.SortOrderInput | Prisma.SortOrder
   ultimo_login?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -337,6 +348,7 @@ export type usuariosScalarWhereWithAggregatesInput = {
   senha?: Prisma.StringNullableWithAggregatesFilter<"usuarios"> | string | null
   google_id?: Prisma.StringNullableWithAggregatesFilter<"usuarios"> | string | null
   foto_perfil?: Prisma.StringNullableWithAggregatesFilter<"usuarios"> | string | null
+  capa_perfil?: Prisma.StringNullableWithAggregatesFilter<"usuarios"> | string | null
   email_verificado?: Prisma.BoolNullableWithAggregatesFilter<"usuarios"> | boolean | null
   ultimo_login?: Prisma.DateTimeNullableWithAggregatesFilter<"usuarios"> | Date | string | null
   created_at?: Prisma.DateTimeNullableWithAggregatesFilter<"usuarios"> | Date | string | null
@@ -350,6 +362,7 @@ export type usuariosCreateInput = {
   senha?: string | null
   google_id?: string | null
   foto_perfil?: string | null
+  capa_perfil?: string | null
   email_verificado?: boolean | null
   ultimo_login?: Date | string | null
   created_at?: Date | string | null
@@ -367,6 +380,7 @@ export type usuariosUncheckedCreateInput = {
   senha?: string | null
   google_id?: string | null
   foto_perfil?: string | null
+  capa_perfil?: string | null
   email_verificado?: boolean | null
   ultimo_login?: Date | string | null
   created_at?: Date | string | null
@@ -383,6 +397,7 @@ export type usuariosUpdateInput = {
   senha?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   google_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   foto_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  capa_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email_verificado?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   ultimo_login?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -400,6 +415,7 @@ export type usuariosUncheckedUpdateInput = {
   senha?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   google_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   foto_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  capa_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email_verificado?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   ultimo_login?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -417,6 +433,7 @@ export type usuariosCreateManyInput = {
   senha?: string | null
   google_id?: string | null
   foto_perfil?: string | null
+  capa_perfil?: string | null
   email_verificado?: boolean | null
   ultimo_login?: Date | string | null
   created_at?: Date | string | null
@@ -430,6 +447,7 @@ export type usuariosUpdateManyMutationInput = {
   senha?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   google_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   foto_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  capa_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email_verificado?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   ultimo_login?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -444,6 +462,7 @@ export type usuariosUncheckedUpdateManyInput = {
   senha?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   google_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   foto_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  capa_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email_verificado?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   ultimo_login?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -469,6 +488,7 @@ export type usuariosCountOrderByAggregateInput = {
   senha?: Prisma.SortOrder
   google_id?: Prisma.SortOrder
   foto_perfil?: Prisma.SortOrder
+  capa_perfil?: Prisma.SortOrder
   email_verificado?: Prisma.SortOrder
   ultimo_login?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
@@ -487,6 +507,7 @@ export type usuariosMaxOrderByAggregateInput = {
   senha?: Prisma.SortOrder
   google_id?: Prisma.SortOrder
   foto_perfil?: Prisma.SortOrder
+  capa_perfil?: Prisma.SortOrder
   email_verificado?: Prisma.SortOrder
   ultimo_login?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
@@ -501,6 +522,7 @@ export type usuariosMinOrderByAggregateInput = {
   senha?: Prisma.SortOrder
   google_id?: Prisma.SortOrder
   foto_perfil?: Prisma.SortOrder
+  capa_perfil?: Prisma.SortOrder
   email_verificado?: Prisma.SortOrder
   ultimo_login?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
@@ -564,6 +586,7 @@ export type usuariosCreateWithoutCategoriasInput = {
   senha?: string | null
   google_id?: string | null
   foto_perfil?: string | null
+  capa_perfil?: string | null
   email_verificado?: boolean | null
   ultimo_login?: Date | string | null
   created_at?: Date | string | null
@@ -580,6 +603,7 @@ export type usuariosUncheckedCreateWithoutCategoriasInput = {
   senha?: string | null
   google_id?: string | null
   foto_perfil?: string | null
+  capa_perfil?: string | null
   email_verificado?: boolean | null
   ultimo_login?: Date | string | null
   created_at?: Date | string | null
@@ -611,6 +635,7 @@ export type usuariosUpdateWithoutCategoriasInput = {
   senha?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   google_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   foto_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  capa_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email_verificado?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   ultimo_login?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -627,6 +652,7 @@ export type usuariosUncheckedUpdateWithoutCategoriasInput = {
   senha?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   google_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   foto_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  capa_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email_verificado?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   ultimo_login?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -642,6 +668,7 @@ export type usuariosCreateWithoutMetas_financeirasInput = {
   senha?: string | null
   google_id?: string | null
   foto_perfil?: string | null
+  capa_perfil?: string | null
   email_verificado?: boolean | null
   ultimo_login?: Date | string | null
   created_at?: Date | string | null
@@ -658,6 +685,7 @@ export type usuariosUncheckedCreateWithoutMetas_financeirasInput = {
   senha?: string | null
   google_id?: string | null
   foto_perfil?: string | null
+  capa_perfil?: string | null
   email_verificado?: boolean | null
   ultimo_login?: Date | string | null
   created_at?: Date | string | null
@@ -689,6 +717,7 @@ export type usuariosUpdateWithoutMetas_financeirasInput = {
   senha?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   google_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   foto_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  capa_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email_verificado?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   ultimo_login?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -705,6 +734,7 @@ export type usuariosUncheckedUpdateWithoutMetas_financeirasInput = {
   senha?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   google_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   foto_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  capa_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email_verificado?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   ultimo_login?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -720,6 +750,7 @@ export type usuariosCreateWithoutTransacoesInput = {
   senha?: string | null
   google_id?: string | null
   foto_perfil?: string | null
+  capa_perfil?: string | null
   email_verificado?: boolean | null
   ultimo_login?: Date | string | null
   created_at?: Date | string | null
@@ -736,6 +767,7 @@ export type usuariosUncheckedCreateWithoutTransacoesInput = {
   senha?: string | null
   google_id?: string | null
   foto_perfil?: string | null
+  capa_perfil?: string | null
   email_verificado?: boolean | null
   ultimo_login?: Date | string | null
   created_at?: Date | string | null
@@ -767,6 +799,7 @@ export type usuariosUpdateWithoutTransacoesInput = {
   senha?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   google_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   foto_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  capa_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email_verificado?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   ultimo_login?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -783,6 +816,7 @@ export type usuariosUncheckedUpdateWithoutTransacoesInput = {
   senha?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   google_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   foto_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  capa_perfil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email_verificado?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   ultimo_login?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -848,6 +882,7 @@ export type usuariosSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   senha?: boolean
   google_id?: boolean
   foto_perfil?: boolean
+  capa_perfil?: boolean
   email_verificado?: boolean
   ultimo_login?: boolean
   created_at?: boolean
@@ -868,13 +903,14 @@ export type usuariosSelectScalar = {
   senha?: boolean
   google_id?: boolean
   foto_perfil?: boolean
+  capa_perfil?: boolean
   email_verificado?: boolean
   ultimo_login?: boolean
   created_at?: boolean
   updated_at?: boolean
 }
 
-export type usuariosOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id_usuario" | "nome" | "sobrenome" | "email" | "senha" | "google_id" | "foto_perfil" | "email_verificado" | "ultimo_login" | "created_at" | "updated_at", ExtArgs["result"]["usuarios"]>
+export type usuariosOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id_usuario" | "nome" | "sobrenome" | "email" | "senha" | "google_id" | "foto_perfil" | "capa_perfil" | "email_verificado" | "ultimo_login" | "created_at" | "updated_at", ExtArgs["result"]["usuarios"]>
 export type usuariosInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   categorias?: boolean | Prisma.usuarios$categoriasArgs<ExtArgs>
   metas_financeiras?: boolean | Prisma.usuarios$metas_financeirasArgs<ExtArgs>
@@ -897,6 +933,7 @@ export type $usuariosPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     senha: string | null
     google_id: string | null
     foto_perfil: string | null
+    capa_perfil: string | null
     email_verificado: boolean | null
     ultimo_login: Date | null
     created_at: Date | null
@@ -1280,6 +1317,7 @@ export interface usuariosFieldRefs {
   readonly senha: Prisma.FieldRef<"usuarios", 'String'>
   readonly google_id: Prisma.FieldRef<"usuarios", 'String'>
   readonly foto_perfil: Prisma.FieldRef<"usuarios", 'String'>
+  readonly capa_perfil: Prisma.FieldRef<"usuarios", 'String'>
   readonly email_verificado: Prisma.FieldRef<"usuarios", 'Boolean'>
   readonly ultimo_login: Prisma.FieldRef<"usuarios", 'DateTime'>
   readonly created_at: Prisma.FieldRef<"usuarios", 'DateTime'>

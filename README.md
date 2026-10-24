@@ -71,3 +71,16 @@ Depois de instalar as dependências, aplique `npm run prisma:migrate` antes de i
 - npm test: cálculos, centavos, datas, períodos vazios, comparações, finalidade dos tokens e invalidação de sessões. Não depende do frontend.
 - npm run test:integration: API e MySQL local, com contas temporárias e limpeza restrita aos dados dos testes. Cobre categorias por usuário, acesso cruzado, aportes simultâneos, conclusão/reabertura, datas, transações pendentes e relatórios. Também verifica cadastro, confirmação, recuperação, concorrência na redefinição, sessões antigas, limites de requisições e falha/timeout de envio com mock HTTP local da Brevo, sem mensagens para destinatários externos.
 - No frontend, npm run test:e2e executa os fluxos no Chrome em desktop e celular.
+
+## Perfil e exclusão de conta
+
+- `GET /api/users/me`: retorna os dados do usuário autenticado, foto, capa e os indicadores `tem_senha` e `acesso_google`. Não retorna hash de senha ou identificador do Google.
+- `PATCH /api/users/me`: recebe `fullName` e, opcionalmente, `avatar` e `cover`. Os dois campos de imagem aceitam data URLs base64 de JPEG, PNG ou WebP com assinatura correspondente e até 200 KB cada; `null` remove a imagem. O nome e o sobrenome têm até 50 caracteres cada. Campos como e-mail e identificador de usuário são rejeitados.
+- `DELETE /api/users/me`: recebe `{ "password": "senha atual" }`. Confere a senha e remove, em uma transação, os lançamentos, metas, categorias e a conta. Credenciais alteradas durante a confirmação impedem a exclusão. As sessões passam a ser rejeitadas porque o usuário deixa de existir. Tentativas de confirmação têm limite por IP.
+- Contas Google podem obter `POST /api/users/me/deletion-challenge`, que retorna um nonce e um `challengeToken` de cinco minutos, vinculado à conta e às credenciais. A interface solicita um novo ID token do Google com esse nonce e envia `{ "googleIdToken": "...", "challengeToken": "..." }` ao DELETE. O servidor valida o ID token com a biblioteca oficial, audience, identidade vinculada e nonce. Token de acesso, recuperação ou confirmação de outra conta não serve como prova de exclusão.
+
+A migração `20261023120000_profile_avatar` amplia `foto_perfil` e adiciona `capa_perfil`, sem remover registros existentes. Em outro ambiente, pare o backend no Windows, execute `npm run prisma:migrate` e `npm run prisma:generate`, e inicie novamente. Nenhuma variável de ambiente nova é necessária; a confirmação Google utiliza os client IDs já usados pelo login.
+
+`npm test` inclui validação das imagens, proteção dos campos do perfil e finalidade/expiração dos tokens de confirmação. `npm run test:integration` também cobre persistência, isolamento, senha incorreta, mudança concorrente de credenciais, exclusão dos dados associados e confirmação Google com o verificador simulado. Os testes criam somente contas temporárias no MySQL local e não enviam e-mails reais.
+
+Referência da validação Google: [verificação de ID tokens no servidor](https://developers.google.com/identity/gsi/web/guides/verify-google-id-token).

@@ -67,7 +67,8 @@ model usuarios {
   email             String              @unique(map: "email") @db.VarChar(150)
   senha             String?             @db.VarChar(255)
   google_id         String?             @unique(map: "google_id") @db.VarChar(255)
-  foto_perfil       String?             @db.VarChar(255)
+  foto_perfil       String?             @db.MediumText
+  capa_perfil       String?             @db.MediumText
   email_verificado  Boolean?            @default(false)
   ultimo_login      DateTime?           @db.DateTime(0)
   created_at        DateTime?           @default(now()) @db.Timestamp(0)
