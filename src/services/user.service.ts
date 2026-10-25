@@ -19,20 +19,12 @@ export function toUserResponse(user: {
   nome: string;
   sobrenome: string | null;
   email: string;
-  foto_perfil?: string | null;
-  capa_perfil?: string | null;
-  senha?: string | null;
-  google_id?: string | null;
 }): UserResponse {
   return {
     id_usuario: user.id_usuario,
     nome: user.nome,
     sobrenome: user.sobrenome,
     email: user.email,
-    foto_perfil: user.foto_perfil ?? null,
-    capa_perfil: user.capa_perfil ?? null,
-    tem_senha: Boolean(user.senha),
-    acesso_google: Boolean(user.google_id),
   };
 }
 
@@ -101,8 +93,17 @@ export const userService = {
       throw new AppError("O cadastro associado a este link não foi encontrado.", 404);
     }
 
-    if (!user.senha || !matchesEmailVerificationToken(version, { ...user, senha: user.senha }) || !await comparePassword(input.password, user.senha)) {
-      throw new AppError("O link não corresponde a este cadastro ou a senha está incorreta. Use o link mais recente e a senha informada no cadastro.", 400);
+    // A senha da tentativa de cadastro é obrigatória: impede que um terceiro cadastre o e-mail
+    // de outra pessoa com uma senha que só ele conhece e a conta seja ativada pelo clique da vítima.
+    if (
+      !user.senha ||
+      !matchesEmailVerificationToken(version, { ...user, senha: user.senha }) ||
+      !(await comparePassword(input.password, user.senha))
+    ) {
+      throw new AppError(
+        "O link não corresponde a este cadastro ou a senha está incorreta. Use o link mais recente e a senha informada no cadastro.",
+        400
+      );
     }
 
     if (user.email_verificado === true) {
