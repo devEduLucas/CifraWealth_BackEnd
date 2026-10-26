@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isProfileImage } from "../utils/profileImage.js";
 
 export const registerUserSchema = z.object({
   fullName: z.string().trim().min(3, "Nome completo deve ter no mínimo 3 caracteres.").refine((value) => {
@@ -48,6 +49,10 @@ export interface UserResponse {
   nome: string;
   sobrenome: string | null;
   email: string;
+  foto_perfil: string | null;
+  capa_perfil: string | null;
+  tem_senha: boolean;
+  acesso_google: boolean;
 }
 
 export interface AuthResponse {
@@ -77,22 +82,14 @@ export const updateProfileSchema = z.object({
     .string()
     .trim()
     .min(3, "Nome completo deve ter no mínimo 3 caracteres.")
+    .max(101)
     .refine((value) => {
       const [first = "", ...rest] = value.split(/\s+/);
       return first.length <= 50 && rest.join(" ").length <= 50;
-    }, "Nome e sobrenome devem ter até 50 caracteres cada.")
-    .optional(),
-  nome: z.string().trim().min(2, "Nome deve ter no mínimo 2 caracteres.").max(50).optional(),
-  sobrenome: z.string().trim().max(50).nullable().optional(),
-  foto_perfil: z.string().max(255).nullable().optional(),
-  capa_perfil: z.string().max(255).nullable().optional(),
-  currentPassword: z.string().min(1, "Informe a senha atual.").optional(),
-  newPassword: z
-    .string()
-    .min(8, "A nova senha deve ter no mínimo 8 caracteres.")
-    .refine((val) => Buffer.byteLength(val, "utf8") <= 72, "A senha não pode exceder 72 bytes.")
-    .optional(),
-});
+    }, "Nome e sobrenome devem ter até 50 caracteres cada."),
+  avatar: z.string().max(275000, "A imagem deve ter até 200 KB.").refine(isProfileImage, "Escolha uma imagem JPEG, PNG ou WebP de até 200 KB.").nullable().optional(),
+  cover: z.string().max(275000, "A imagem deve ter até 200 KB.").refine(isProfileImage, "Escolha uma imagem JPEG, PNG ou WebP de até 200 KB.").nullable().optional(),
+}).strict();
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 
