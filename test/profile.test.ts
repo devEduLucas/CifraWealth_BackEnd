@@ -12,6 +12,12 @@ import {
 } from "../src/utils/accountDeletionToken.js";
 import { createPasswordResetToken } from "../src/utils/PasswordResetToken.js";
 import { sessionVersion, signToken, verifyToken } from "../src/utils/jwt.js";
+import type { Request, Response } from "express";
+import { userController } from "../src/controllers/user.controller.js";
+import { profileService } from "../src/services/profile.service.js";
+import { toUserResponse } from "../src/services/user.service.js";
+import { userRepository } from "../src/repositories/user.repository.js";
+import { AppError } from "../src/utils/AppError.js";
 
 const user = {
   id_usuario: 123,
@@ -77,6 +83,83 @@ test("exclusão exige uma única credencial e não aceita selecionar outra conta
     { googleIdToken: "x" },
   ])
     assert.equal(deleteAccountSchema.safeParse(body).success, false);
+});
+
+const profile = {
+  id_usuario: user.id_usuario,
+  nome: "Nome",
+  sobrenome: "Sobrenome",
+  email: user.email,
+  foto_perfil: png,
+  capa_perfil: png,
+  tem_senha: true,
+  acesso_google: true,
+};
+
+test("resposta de perfil preserva imagens e formas de acesso sem expor credenciais", () => {
+  assert.deepEqual(toUserResponse({ ...user, ...profile }), profile);
+  assert.deepEqual(toUserResponse({ ...user, ...profile, senha: null, google_id: null, foto_perfil: null, capa_perfil: null }), {
+    ...profile, foto_perfil: null, capa_perfil: null, tem_senha: false, acesso_google: false,
+  });
+});
+
+function responseCapture() {
+  let statusCode: number | undefined;
+  let body: unknown;
+  const res = {
+    status(code: number) { statusCode = code; return this; },
+    json(value: unknown) { body = value; return this; },
+  } as Response;
+  return { res, read: () => ({ statusCode, body }) };
+}
+
+test("leitura e atualização do perfil usam o contrato completo do serviço", async (context) => {
+  context.mock.method(userRepository, "findById", async () => { throw new Error("A leitura deve usar o serviço de perfil."); });
+  context.mock.method(userRepository, "updateProfile", async () => { throw new Error("A atualização deve usar o serviço de perfil."); });
+  const get = context.mock.method(profileService, "get", async () => profile);
+  const update = context.mock.method(profileService, "update", async () => profile);
+  const body = { fullName: "Nome Sobrenome", avatar: png, cover: png };
+  const req = { userId: user.id_usuario, body } as Request;
+  const next = context.mock.fn();
+
+  for (const handler of [userController.getProfile, userController.updateProfile]) {
+    const captured = responseCapture();
+    await handler(req, captured.res, next);
+    assert.deepEqual(captured.read(), { statusCode: 200, body: profile });
+  }
+  assert.deepEqual(get.mock.calls[0]?.arguments, [user.id_usuario]);
+  assert.deepEqual(update.mock.calls[0]?.arguments, [user.id_usuario, body]);
+  assert.equal(next.mock.callCount(), 0);
+});
+
+test("desafio e exclusão só retornam sucesso após executar o serviço autenticado", async (context) => {
+  const challenge = { challengeToken: "mock-challenge", nonce: "mock-nonce" };
+  const result = { message: "Conta e dados financeiros excluídos com sucesso." };
+  const challengeCall = context.mock.method(profileService, "deletionChallenge", async () => challenge);
+  const deleteCall = context.mock.method(profileService, "delete", async () => result);
+  const body = { password: "senha-fixture" };
+  const req = { userId: user.id_usuario, body } as Request;
+  const next = context.mock.fn();
+
+  for (const [handler, expected] of [[userController.deletionChallenge, challenge], [userController.deleteAccount, result]] as const) {
+    const captured = responseCapture();
+    await handler(req, captured.res, next);
+    assert.deepEqual(captured.read(), { statusCode: 200, body: expected });
+  }
+  assert.deepEqual(challengeCall.mock.calls[0]?.arguments, [user.id_usuario]);
+  assert.deepEqual(deleteCall.mock.calls[0]?.arguments, [user.id_usuario, body]);
+  assert.equal(next.mock.callCount(), 0);
+});
+
+test("credencial recusada na exclusão propaga erro sem responder sucesso", async (context) => {
+  const denied = new AppError("Senha incorreta.", 403);
+  context.mock.method(profileService, "delete", async () => { throw denied; });
+  const captured = responseCapture();
+  const next = context.mock.fn();
+  await userController.deleteAccount({ userId: user.id_usuario, body: { password: "incorreta" } } as Request, captured.res, next);
+  assert.equal(next.mock.callCount(), 1);
+  assert.deepEqual(next.mock.calls[0]?.arguments, [denied]);
+  assert.equal(captured.read().body, undefined);
 });
 
 test("confirmação Google é vinculada à conta e às credenciais, sem autenticar uma sessão", () => {
