@@ -1,0 +1,135 @@
+
+name: cifrawealth-local
+
+services:
+
+  # =====================================
+  # MYSQL
+  # =====================================
+  mysql:
+    image: mysql:8.0
+    container_name: cifrawealth-mysql
+    restart: unless-stopped
+
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+
+    ports:
+      - "127.0.0.1:3307:3306"
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'mysqladmin ping -h 127.0.0.1 -u root -p$${MYSQL_ROOT_PASSWORD} --silent'
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+
+
+  # =====================================
+  # MIGRACOES DO PRISMA
+  # =====================================
+  migrate:
+    image: cifrawealth-backend:local
+    container_name: cifrawealth-migrate
+    restart: "no"
+
+    command: ["npm", "run", "prisma:migrate"]
+
+    environment:
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+
+  # =====================================
+  # BACKEND
+  # =====================================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    image: cifrawealth-backend:local
+    container_name: cifrawealth-backend
+    restart: unless-stopped
+
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
+
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
+      EMAIL_VERIFICATION_SECRET: ${EMAIL_VERIFICATION_SECRET}
+
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+
+      CORS_ORIGIN: http://localhost:8080
+      FRONTEND_URL: http://localhost:8080
+
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      BREVO_SENDER_EMAIL: ${BREVO_SENDER_EMAIL:-}
+      BREVO_SENDER_NAME: ${BREVO_SENDER_NAME:-Cifra Wealth}
+      BREVO_TIMEOUT_MS: ${BREVO_TIMEOUT_MS:-10000}
+
+    ports:
+      - "127.0.0.1:3000:3000"
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+
+  # =====================================
+  # FRONTEND
+  # =====================================
+  frontend:
+    build:
+      context: ../../FrontEnd/CifraWealth_FrontEnd
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
+        VITE_DEMO_MODE: "false"
+
+    image: cifrawealth-frontend:local
+    container_name: cifrawealth-frontend
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:8080:80"
+
+    depends_on:
+      backend:
+        condition: service_healthy
+
+
+# =====================================
+# VOLUMES
+# =====================================
+volumes:
+  mysql_data:
