@@ -3,7 +3,7 @@ import { userRepository } from "../repositories/user.repository.js";
 import { toUserResponse } from "./user.service.js";
 import { comparePassword } from "../utils/hashPassword.js";
 import { AppError } from "../utils/AppError.js";
-import { env } from "../config/env.js";
+import { googleAudiences } from "../utils/googleAudiences.js";
 import {
   createAccountDeletionChallenge,
   readAccountDeletionChallenge,
@@ -40,7 +40,7 @@ export const profileService = {
 
   async deletionChallenge(userId: number) {
     const user = await currentUser(userId);
-    if (!user.google_id || !env.GOOGLE_CLIENT_ID)
+    if (!user.google_id || googleAudiences.length === 0)
       throw new AppError(
         "A confirmação com Google está indisponível. Se você cadastrou uma senha, use-a para confirmar.",
         503,
@@ -62,7 +62,7 @@ export const profileService = {
           "Esta conta precisa ser confirmada com sua senha.",
           403,
         );
-      if (!env.GOOGLE_CLIENT_ID)
+      if (googleAudiences.length === 0)
         throw new AppError(
           "A confirmação com Google está temporariamente indisponível.",
           503,
@@ -72,7 +72,7 @@ export const profileService = {
       try {
         const ticket = await googleClient.verifyIdToken({
           idToken: input.googleIdToken,
-          audience: env.GOOGLE_CLIENT_ID,
+          audience: googleAudiences,
         });
         payload = ticket.getPayload();
       } catch {
