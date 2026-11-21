@@ -5,11 +5,12 @@ import { AppError } from "../utils/AppError.js";
 import { comparePassword, hashPassword } from "../utils/hashPassword.js";
 import { sessionVersion, signToken } from "../utils/jwt.js";
 import { env } from "../config/env.js";
+import { googleAudiences } from "../utils/googleAudiences.js";
 import { createPasswordResetToken, matchesPasswordResetToken, readPasswordResetToken } from "../utils/PasswordResetToken.js";
 import { isEmailDeliveryConfigured, sendPasswordResetEmail } from "./email.service.js";
 import type { AuthResponse, ForgotPasswordInput, GoogleLoginInput, LoginUserInput, ResetPasswordInput } from "../types/user.types.js";
 
-const googleClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
+const googleClient = new OAuth2Client();
 
 function splitFullName(fullName: string): { nome: string; sobrenome: string | null } {
   const [nome, ...rest] = fullName.trim().split(/\s+/);
@@ -43,7 +44,7 @@ export const authService = {
   },
 
   async google(input: GoogleLoginInput): Promise<AuthResponse> {
-    if (!env.GOOGLE_CLIENT_ID) {
+    if (googleAudiences.length === 0) {
       throw new AppError("Login com Google não está configurado.", 503);
     }
 
@@ -51,7 +52,7 @@ export const authService = {
     try {
       ticket = await googleClient.verifyIdToken({
         idToken: input.idToken,
-        audience: env.GOOGLE_CLIENT_ID,
+        audience: googleAudiences,
       });
     } catch {
       throw new AppError("Token do Google inválido ou expirado.", 401);
