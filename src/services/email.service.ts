@@ -19,25 +19,95 @@ interface BrevoPayload {
   textContent: string;
 }
 
-async function deliver(payload: BrevoPayload, failureMessage: string) {
+interface BrevoResponseBody {
+  code?: unknown;
+  message?: unknown;
+  messageId?: unknown;
+}
+
+function parseBrevoResponse(body: string): BrevoResponseBody | null {
+  if (!body) return null;
+
   try {
-    const response = await fetch(env.BREVO_API_URL, {
+    const parsed: unknown = JSON.parse(body);
+    return typeof parsed === "object" && parsed !== null
+      ? parsed as BrevoResponseBody
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Remove dados pessoais e credenciais de mensagens retornadas pelo provedor. */
+function sanitizeProviderMessage(message: string): string {
+  return message
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[email ocultado]")
+    .replace(/https?:\/\/[^\s"'<>]+/gi, "[url ocultada]")
+    .replace(/\b(token|api[-_ ]?key|authorization)\b\s*[:=]\s*[^,\s;]+/gi, "$1=[redigido]")
+    .slice(0, 300);
+}
+
+async function deliver(
+  payload: BrevoPayload,
+  failureMessage: string,
+  eventName: "EMAIL_VERIFICATION" | "PASSWORD_RESET",
+): Promise<void> {
+  let response: Response;
+
+  try {
+    response = await fetch(env.BREVO_API_URL, {
       method: "POST",
-      headers: { accept: "application/json", "api-key": env.BREVO_API_KEY!, "content-type": "application/json" },
+      headers: {
+        accept: "application/json",
+        "api-key": env.BREVO_API_KEY!,
+        "content-type": "application/json",
+      },
       body: JSON.stringify(payload),
       signal: AbortSignal.timeout(env.BREVO_TIMEOUT_MS),
     });
-    await response.body?.cancel();
-    if (!response.ok) {
-      console.error("Falha no envio Brevo. HTTP:", response.status);
-      throw new AppError(failureMessage, 502);
-    }
   } catch (error) {
-    if (error instanceof AppError) throw error;
-    // Do not log request data, provider response bodies, tokens or recipient addresses.
-    console.error("Falha no envio Brevo:", error instanceof Error ? error.name : "DELIVERY_ERROR");
+    // Nunca registrar o payload: ele contém destinatário e link com token.
+    console.error("[BREVO] Falha de comunicação com o provedor.", {
+      event: eventName,
+      reason: error instanceof Error ? error.name : "DELIVERY_ERROR",
+    });
     throw new AppError(failureMessage, 502);
   }
+
+  // O corpo precisa ser lido antes de ser descartado: a Brevo informa nele
+  // o motivo de rejeições como remetente inválido ou parâmetro incorreto.
+  const responseText = await response.text().catch(() => "");
+  const providerData = parseBrevoResponse(responseText);
+
+  if (!response.ok) {
+    const providerCode = typeof providerData?.code === "string"
+      ? providerData.code.slice(0, 100)
+      : undefined;
+    const providerMessage = typeof providerData?.message === "string"
+      ? sanitizeProviderMessage(providerData.message)
+      : undefined;
+
+    console.error("[BREVO] A API rejeitou o e-mail.", {
+      event: eventName,
+      httpStatus: response.status,
+      ...(providerCode ? { providerCode } : {}),
+      ...(providerMessage ? { providerMessage } : {}),
+    });
+
+    throw new AppError(failureMessage, 502);
+  }
+
+  const messageId = typeof providerData?.messageId === "string"
+    ? providerData.messageId.slice(0, 150)
+    : undefined;
+
+  // HTTP 2xx confirma que a Brevo aceitou a solicitação, não que a mensagem
+  // chegou à caixa de entrada. A entrega final deve ser verificada no painel.
+  console.info("[BREVO] E-mail aceito para processamento.", {
+    event: eventName,
+    httpStatus: response.status,
+    ...(messageId ? { messageId } : {}),
+  });
 }
 
 function escapeHtml(value: string): string {
@@ -96,11 +166,7 @@ export async function sendVerificationEmail(email: string, token: string): Promi
       name: env.BREVO_SENDER_NAME || "Cifra Wealth",
       email: env.BREVO_SENDER_EMAIL!,
     },
-    to: [
-      {
-        email,
-      },
-    ],
+    to: [{ email }],
     subject: "Confirme seu e-mail — CifraWealth",
     ...accountEmail({
       title: "Confirme seu e-mail",
@@ -116,7 +182,7 @@ export async function sendVerificationEmail(email: string, token: string): Promi
     }),
   };
 
-  await deliver(emailPayload, "Não foi possível enviar o e-mail de confirmação. Tente novamente mais tarde.");
+  await deliver(emailPayload, "Não foi possível enviar o e-mail de confirmação. Tente novamente mais tarde.", "EMAIL_VERIFICATION");
 }
 
 export async function sendPasswordResetEmail(email: string, token: string): Promise<void> {
@@ -128,11 +194,7 @@ export async function sendPasswordResetEmail(email: string, token: string): Prom
       name: env.BREVO_SENDER_NAME || "Cifra Wealth",
       email: env.BREVO_SENDER_EMAIL!,
     },
-    to: [
-      {
-        email,
-      },
-    ],
+    to: [{ email }],
     subject: "Criar nova senha — CifraWealth",
     ...accountEmail({
       title: "Criar nova senha",
@@ -148,5 +210,5 @@ export async function sendPasswordResetEmail(email: string, token: string): Prom
     }),
   };
 
-  await deliver(emailPayload, "Não foi possível enviar o e-mail de recuperação. Tente novamente mais tarde.");
+  await deliver(emailPayload, "Não foi possível enviar o e-mail de recuperação. Tente novamente mais tarde.", "PASSWORD_RESET");
 }
