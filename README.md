@@ -2,6 +2,15 @@
 
 API Express 5, TypeScript, Prisma e MySQL. A estrutura separa rotas, controllers, validações, serviços e repositórios. Autenticação JWT protege transações, metas, categorias e relatórios.
 
+## Consultas de histórico para o site
+
+As consultas anteriores `GET /api/transactions` e `GET /api/categories` continuam retornando arrays, inclusive os filtros e a paginação já usados pelo app.
+
+- `GET /api/transactions?view=page`: retorna `{ items, total, page, pageSize, hasHistory, summary }`. Aceita `pageNumber` (a partir de 1), `pageSize` (1–100, padrão 20), `kind` (receita/despesa), `state` (confirmada/pendente/prevista), `category`, `search`, `start`, `end` e `order` (newest/oldest). As datas são `YYYY-MM-DD`. Os totais consideram toda a seleção, independentemente da página. Datas futuras ficam em previstas, sem entrar no resultado confirmado; a busca por descrição e categoria usa a collation sem distinção de acentos do schema.
+- `GET /api/categories?view=usage&start=YYYY-MM-DD&end=YYYY-MM-DD`: retorna `{ items: [{ id_categoria, amount, count, historyCount }] }`. Os dois limites são opcionais. Valor/contagem do período consideram somente registros confirmados até hoje; a contagem histórica inclui os vínculos de qualquer data/situação para preservar a proteção de exclusão.
+
+As consultas exigem autenticação, restringem todos os dados à conta autenticada e não precisam de migração do banco. `test/historyQuery.integration.ts` verifica o contrato no MySQL local usando contas temporárias próprias. Para publicar a melhoria de desempenho, atualize o backend junto do frontend; clientes antigos continuam usando os contratos anteriores.
+
 ## Executar
 
 1. Configure um banco MySQL e copie .env.example para .env, preenchendo DATABASE_URL e um JWT_SECRET aleatório. GOOGLE_CLIENT_ID é opcional e habilita o login com Google.
@@ -11,6 +20,10 @@ API Express 5, TypeScript, Prisma e MySQL. A estrutura separa rotas, controllers
 Nunca publique o arquivo .env. O repositório inclui apenas valores de exemplo.
 
 O cliente em src/generated/prisma é gerado no postinstall. Ele ainda é versionado e pode apresentar diferenças de caminhos locais após npm install; revise o diff antes de commitar. Se o Windows impedir a substituição da DLL durante prisma generate, pare a instância local da API que está usando o Prisma e execute npm run prisma:generate novamente.
+
+## Histórico para apresentação
+
+O comando `npm run demo:seed -- --api https://seu-backend/api` mostra o plano sem gravar. Adicionar `--email conta@exemplo.com --apply` solicita a senha de forma oculta e adiciona o histórico fictício somente à conta autenticada, preservando seus registros. Veja [o roteiro de demonstração e publicação](docs/demonstracao.md) para preparar a conta usada pela Vercel. Não confundir com o seed de categorias do Prisma.
 
 ## Cadastro e confirmação de e-mail
 
@@ -33,6 +46,16 @@ O cliente em src/generated/prisma é gerado no postinstall. Ele ainda é version
 
 Reinicie o backend após alterar o .env. Em produção, use as URLs HTTPS do ambiente em CORS_ORIGIN/FRONTEND_URL e configure o frontend com a URL pública desta API.
 
+## Proxy reverso e limites de tentativas
+
+`TRUST_PROXY=false` é o padrão para acesso direto, inclusive no desenvolvimento. Atrás de um proxy, configure explicitamente o número de saltos até a API ou uma lista de IPs/CIDRs dos proxies confiáveis. Exemplos de sintaxe: `TRUST_PROXY=2` ou `TRUST_PROXY=127.0.0.1/32,::1/128`. Esses valores são ilustrativos; não representam a infraestrutura do Render. `true`, curingas e redes `/0` são rejeitados ao iniciar a aplicação.
+
+A seleção do IP segue a configuração do [Express para proxies](https://expressjs.com/en/guide/behind-proxies/). Uma contagem só é adequada quando todos os caminhos de acesso têm a quantidade de saltos esperada; um caminho mais curto pode permitir falsificar o IP. Uma lista deve conter somente os proxies realmente controlados ou verificados. Cabeçalhos fornecidos pelo cliente não devem ser considerados confiáveis por conta própria.
+
+No Render, o tráfego público passa por proxies e o IP do socket pode ser o do intermediário, conforme a [orientação oficial sobre IP do cliente](https://render.com/articles/how-render-handles-ddos-attacks). O responsável pelo deployment deve verificar a cadeia efetiva, inclusive domínio público, CDN ou proxy adicional, antes de preencher a variável. Não presuma um único salto.
+
+Em homologação, compare o IP resolvido pelo Express com o IP de clientes conhecidos, confira a cadeia recebida e teste endereços forjados à esquerda do `X-Forwarded-For`. Confirme que clientes diferentes têm limites independentes e que trocar um cabeçalho não reinicia o limite do mesmo cliente. Remova qualquer diagnóstico temporário depois da verificação. A biblioteca documenta esse procedimento em [diagnóstico de proxy e limitador global](https://express-rate-limit.mintlify.app/guides/troubleshooting-proxy-issues). Esta atualização não cria uma rota pública de diagnóstico nem altera o `.env` de nenhum ambiente; a configuração requer reinício ou novo deployment.
+
 ## Banco existente
 
 Para um banco criado pelo SQL antigo que já contém usuarios, categorias, transacoes e metas_financeiras, confira a compatibilidade das tabelas e registre a base com npx prisma migrate resolve --applied 20260803104637_init antes de npm run prisma:migrate. Não use reset para atualizar um banco com dados.
@@ -48,9 +71,9 @@ A migration 20261012150000_email_verification_backfill mantém o acesso das cont
 - PUT /api/goals/:id: edita; descricao, data_inicio e data_fim aceitam null para remover valores opcionais. O status é recalculado ao alterar o objetivo.
 - POST /api/goals/:id/contribute: recebe valor, soma à reserva e conclui a meta ao atingir o objetivo. Usa transação e bloqueio da linha no MySQL para preservar aportes simultâneos. Metas canceladas não aceitam aportes.
 - DELETE /api/goals/:id: exclui somente a meta do usuário autenticado.
-- GET /api/reports/detailed?data_inicio=2026-10-05&data_fim=2026-10-25: resumo, comparação anterior, meses, categorias, insights, transações e situação atual das metas. Datas inclusivas, intervalo de até cinco anos e somente transações confirmadas. Consulta sempre limitada ao usuário autenticado.
+- GET /api/reports/detailed?data_inicio=2026-10-05&data_fim=2026-10-25: resumo, comparação anterior, meses, categorias, insights, transações e situação atual das metas. Datas inclusivas, intervalo de até cinco anos e somente transações confirmadas até hoje em `America/Sao_Paulo`. Consulta sempre limitada ao usuário autenticado. Datas finais futuras não antecipam valores realizados: o período solicitado, os meses e a comparação anterior de mesma duração são preservados, mas lançamentos futuros são excluídos. Um período inteiramente futuro tem totais zero; a comparação ainda pode ter movimentos já realizados e a situação atual das metas continua disponível.
 - GET /api/reports/monthly?ano=2026: compatibilidade com o dashboard, incluindo meses sem movimentos.
-- GET /api/transactions?data_inicio=2026-10-05&data_fim=2026-10-25: filtro de transações por datas.
+- GET /api/transactions?data_inicio=2026-10-05&data_fim=2026-10-25: filtro de transações por datas. A ordenação usa data e identificador decrescentes para manter um desempate estável, inclusive com `limit` e `page`.
 
 A reserva de uma meta é um registro manual do dinheiro já guardado. Não representa transferência bancária nem despesa. Valores monetários são persistidos como Decimal; relatórios somam centavos inteiros.
 
@@ -58,7 +81,7 @@ A reserva de uma meta é um registro manual do dinheiro já guardado. Não repre
 
 - O dashboard considera somente transações confirmadas até a data atual em `America/Sao_Paulo`. Um `data_fim` futuro não antecipa o saldo realizado. O saldo não representa consulta bancária, saldo inicial ou reservas das metas.
 - Criação de transação sem `status`: datas futuras começam como `pendente`; demais datas começam como `confirmada`. A interface oferece edição e confirmação de pendências. Lançamentos futuros são identificados como previstos.
-- `GET /api/reports/monthly?ano=2026&data_fim=2026-10-18` aceita um corte opcional por data, usado no dashboard. Relatórios personalizados mantêm seu período explícito e consideram somente registros confirmados.
+- `GET /api/reports/monthly?ano=2026&data_fim=2026-10-18` aceita um corte opcional por data, usado no dashboard. O corte efetivo é a menor data entre o fim informado e hoje; sem o parâmetro, usa hoje. Anos futuros ou cortes anteriores ao início do ano retornam os doze meses zerados. Relatórios personalizados mantêm seu período explícito e seguem o mesmo limite de valores realizados, mesmo quando um lançamento futuro foi marcado como confirmado.
 - `POST /api/goals/:id/withdraw` recebe `{ "valor": 100 }`, valida saldo suficiente e registra a retirada com o mesmo bloqueio de linha usado nos aportes. O progresso e a situação são recalculados. `PUT /api/goals/:id` com `valor_atual` corrige o total, incluindo zero; aceita até duas casas decimais. Essas operações não criam despesas ou transferências.
 - A migração `20261018230000_unique_user_categories` adiciona unicidade por usuário, nome e tipo. Não exclui, renomeia nem consolida categorias. Se um ambiente já tiver duplicatas, elas precisam ser avaliadas antes da aplicação; o índice falha preservando esses registros.
 - Os `overrides` fixam versões corrigidas de `body-parser`, `proxy-addr`, `qs`, `deepmerge-ts` e `uuid`, preservando Prisma 6 e a interface atual de autenticação. `body-parser` 2.4.0 corrige o encerramento do processo por corpos comprimidos malformados descrito em [GHSA-27r3-jxmh-p828](https://github.com/expressjs/body-parser/security/advisories/GHSA-27r3-jxmh-p828). Ao removê-los no futuro, confira as versões transitivas e rode os testes e o audit novamente.
@@ -69,7 +92,7 @@ Depois de instalar as dependências, aplique `npm run prisma:migrate` antes de i
 ## Testes
 
 - npm run typecheck, npm run typecheck:tests e npm run build. A verificação dos testes inclui os arquivos fora de src para detectar referências removidas.
-- npm test: cálculos, centavos, datas, períodos vazios, comparações, finalidade dos tokens e invalidação de sessões. Não depende do frontend.
+- npm test: cálculos, centavos, datas, períodos vazios, comparações, finalidade dos tokens e invalidação de sessões. Inclui o corte de relatórios em hoje, limites entre UTC e São Paulo, períodos futuros e configuração de proxy. Testes HTTP locais de limite por IP usam corpos inválidos para encerrar antes de consultar o banco; verificam clientes independentes, prefixos forjados e proxies não confiáveis. Não depende do frontend nem acessa banco ou e-mail externo.
 - npm run test:integration: API e MySQL local, com contas temporárias e limpeza restrita aos dados dos testes. Cobre categorias por usuário, acesso cruzado, aportes simultâneos, conclusão/reabertura, datas, transações pendentes e relatórios. Também verifica cadastro, confirmação, recuperação, concorrência na redefinição, sessões antigas, limites de requisições e falha/timeout de envio com mock HTTP local da Brevo, sem mensagens para destinatários externos.
 - No frontend, npm run test:e2e executa os fluxos no Chrome em desktop e celular.
 

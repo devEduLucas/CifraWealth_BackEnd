@@ -3,6 +3,8 @@ import { transactionService } from "../services/transaction.service.js";
 import { listTransactionsQuerySchema } from "../types/transaction.types.js";
 import { parseIdParam } from "../utils/parseIdParam.js";
 import { AppError } from "../utils/AppError.js";
+import { transactionPageQuerySchema } from '../types/historyQuery.types.js';
+import { historyQueryService } from '../services/historyQuery.service.js';
 
 function getUserId(req: Request): number {
   if (!req.userId) {
@@ -15,6 +17,10 @@ export const transactionController = {
   async list(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const userId = getUserId(req);
+      if (req.query.view === 'page') {
+        res.status(200).json(await historyQueryService.transactions(userId, transactionPageQuerySchema.parse(req.query)));
+        return;
+      }
       const query = listTransactionsQuerySchema.parse(req.query);
       const transactions = await transactionService.list(userId, query);
       res.status(200).json(transactions);

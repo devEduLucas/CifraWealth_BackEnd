@@ -1,6 +1,6 @@
 import { financialGoalRepository } from "../repositories/financialGoal.repository.js";
 import { buildDetailedReport, previousReportRange } from "../utils/reports.js";
-import { parseDateOnly, toDateOnlyString } from "../utils/formatDate.js";
+import { parseDateOnly, toDateOnlyString, todayDateOnly } from "../utils/formatDate.js";
 import type { DetailedReportQuery, DetailedReportResponse } from "../types/report.types.js";
 import { reportRepository } from "../repositories/report.repository.js";
 import { toMoneyNumber } from "../utils/money.js";
@@ -9,14 +9,23 @@ import type { MonthlyReportItem } from "../types/report.types.js";
 export const reportService = {
   async detailed(userId: number, query: DetailedReportQuery): Promise<DetailedReportResponse> {
     const previous = previousReportRange(query.data_inicio, query.data_fim);
+    // Keep the requested period and comparison, but only query realized movements.
+    const today = todayDateOnly();
+    const cutoff = query.data_fim < today ? query.data_fim : today;
     const [transactions, goals] = await Promise.all([
-      reportRepository.findConfirmedByUserAndRange(userId, parseDateOnly(previous.start), parseDateOnly(query.data_fim)),
+      previous.start > cutoff
+        ? []
+        : reportRepository.findConfirmedByUserAndRange(userId, parseDateOnly(previous.start), parseDateOnly(cutoff)),
       financialGoalRepository.findAllByUser(userId),
     ]);
     return buildDetailedReport(query.data_inicio, query.data_fim, transactions.map((item) => ({ id: item.id_transacao, data: toDateOnlyString(item.data_transacao), descricao: item.descricao, categoriaId: item.id_categoria, categoria: item.categorias.nome, cor: item.categorias.cor, tipo: item.tipo, valor: toMoneyNumber(item.valor) })), goals.filter((goal) => goal.status !== "cancelada").map((goal) => ({ id: goal.id_meta, nome: goal.titulo, valorAtual: toMoneyNumber(goal.valor_atual), valorAlvo: toMoneyNumber(goal.valor_objetivo) })));
   },
   async monthly(userId: number, ano: number, end?: string): Promise<MonthlyReportItem[]> {
-    const transactions = await reportRepository.findConfirmedByUserAndYear(userId, ano, end ? parseDateOnly(end) : undefined);
+    const today = todayDateOnly();
+    const cutoff = end && end < today ? end : today;
+    const transactions = cutoff < `${ano}-01-01`
+      ? []
+      : await reportRepository.findConfirmedByUserAndYear(userId, ano, parseDateOnly(cutoff));
 
     const totalsByMonth = new Map<string, { receitas: number; despesas: number }>();
 
