@@ -2,6 +2,15 @@
 
 API Express 5, TypeScript, Prisma e MySQL. A estrutura separa rotas, controllers, validações, serviços e repositórios. Autenticação JWT protege transações, metas, categorias e relatórios.
 
+## Consultas de histórico para o site
+
+As consultas anteriores `GET /api/transactions` e `GET /api/categories` continuam retornando arrays, inclusive os filtros e a paginação já usados pelo app.
+
+- `GET /api/transactions?view=page`: retorna `{ items, total, page, pageSize, hasHistory, summary }`. Aceita `pageNumber` (a partir de 1), `pageSize` (1–100, padrão 20), `kind` (receita/despesa), `state` (confirmada/pendente/prevista), `category`, `search`, `start`, `end` e `order` (newest/oldest). As datas são `YYYY-MM-DD`. Os totais consideram toda a seleção, independentemente da página. Datas futuras ficam em previstas, sem entrar no resultado confirmado; a busca por descrição e categoria usa a collation sem distinção de acentos do schema.
+- `GET /api/categories?view=usage&start=YYYY-MM-DD&end=YYYY-MM-DD`: retorna `{ items: [{ id_categoria, amount, count, historyCount }] }`. Os dois limites são opcionais. Valor/contagem do período consideram somente registros confirmados até hoje; a contagem histórica inclui os vínculos de qualquer data/situação para preservar a proteção de exclusão.
+
+As consultas exigem autenticação, restringem todos os dados à conta autenticada e não precisam de migração do banco. `test/historyQuery.integration.ts` verifica o contrato no MySQL local usando contas temporárias próprias. Para publicar a melhoria de desempenho, atualize o backend junto do frontend; clientes antigos continuam usando os contratos anteriores.
+
 ## Executar
 
 1. Configure um banco MySQL e copie .env.example para .env, preenchendo DATABASE_URL e um JWT_SECRET aleatório. GOOGLE_CLIENT_ID é opcional e habilita o login com Google.

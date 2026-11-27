@@ -2,6 +2,8 @@ import type { NextFunction, Request, Response } from "express";
 import { categoryService } from "../services/category.service.js";
 import { parseIdParam } from "../utils/parseIdParam.js";
 import { AppError } from "../utils/AppError.js";
+import { categoryUsageQuerySchema } from '../types/historyQuery.types.js';
+import { historyQueryService } from '../services/historyQuery.service.js';
 
 function getUserId(req: Request): number {
   if (!req.userId) {
@@ -13,6 +15,10 @@ function getUserId(req: Request): number {
 export const categoryController = {
   async list(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      if (req.query.view === 'usage') {
+        res.status(200).json(await historyQueryService.categories(getUserId(req), categoryUsageQuerySchema.parse(req.query)));
+        return;
+      }
       res.status(200).json(await categoryService.list(getUserId(req)));
     } catch (error) {
       next(error);

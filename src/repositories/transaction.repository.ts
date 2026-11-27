@@ -34,7 +34,7 @@ export const transactionRepository = {
 
     return prisma.transacoes.findMany({
       where: buildWhere(userId, filters),
-      orderBy: { data_transacao: "desc" },
+      orderBy: [{ data_transacao: "desc" }, { id_transacao: "desc" }],
       ...(take !== undefined && { take }),
       ...(skip !== undefined && { skip }),
     });

@@ -13,7 +13,7 @@
     "prisma:generate": "prisma generate",
     "postinstall": "prisma generate",
     "test": "node --import tsx --test test/reports.test.ts test/reportService.test.ts test/trustProxy.test.ts test/authTokens.test.ts test/authMiddleware.test.ts test/profile.test.ts test/emailTemplates.test.ts test/demoSeed.test.mjs",
-    "test:integration": "node --import tsx --test test/sprint5.integration.ts test/auth.integration.ts test/profile.integration.ts",
+    "test:integration": "node --import tsx --test test/sprint5.integration.ts test/auth.integration.ts test/profile.integration.ts test/historyQuery.integration.ts",
     "db:seed": "prisma db seed",
     "demo:seed": "node scripts/seedDemo.mjs",
     "prisma:migrate": "prisma migrate deploy"
