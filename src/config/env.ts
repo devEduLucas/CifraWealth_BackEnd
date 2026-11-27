@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { z } from "zod";
+import { trustProxySchema } from "./trustProxy.js";
 
 const optionalEnvString = z.preprocess(
   (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
@@ -22,6 +23,7 @@ const envSchema = z.object({
   ),
   JWT_EXPIRES_IN: z.string().default("1d"),
   CORS_ORIGIN: z.string().min(1, "CORS_ORIGIN é obrigatória."),
+  TRUST_PROXY: trustProxySchema,
   GOOGLE_CLIENT_ID: optionalEnvString,
   FRONTEND_URL: z.preprocess(
     (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),

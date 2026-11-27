@@ -6,8 +6,10 @@ import { corsOptions } from "./config/cors.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 import { notFoundMiddleware } from "./middlewares/notFound.middleware.js";
 import { router } from "./routes/index.js";
+import { env } from "./config/env.js";
 
 export const app = express();
+app.set("trust proxy", env.TRUST_PROXY);
 
 app.use(
   helmet({

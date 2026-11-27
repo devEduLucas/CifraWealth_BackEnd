@@ -33,6 +33,16 @@ O cliente em src/generated/prisma é gerado no postinstall. Ele ainda é version
 
 Reinicie o backend após alterar o .env. Em produção, use as URLs HTTPS do ambiente em CORS_ORIGIN/FRONTEND_URL e configure o frontend com a URL pública desta API.
 
+## Proxy reverso e limites de tentativas
+
+`TRUST_PROXY=false` é o padrão para acesso direto, inclusive no desenvolvimento. Atrás de um proxy, configure explicitamente o número de saltos até a API ou uma lista de IPs/CIDRs dos proxies confiáveis. Exemplos de sintaxe: `TRUST_PROXY=2` ou `TRUST_PROXY=127.0.0.1/32,::1/128`. Esses valores são ilustrativos; não representam a infraestrutura do Render. `true`, curingas e redes `/0` são rejeitados ao iniciar a aplicação.
+
+A seleção do IP segue a configuração do [Express para proxies](https://expressjs.com/en/guide/behind-proxies/). Uma contagem só é adequada quando todos os caminhos de acesso têm a quantidade de saltos esperada; um caminho mais curto pode permitir falsificar o IP. Uma lista deve conter somente os proxies realmente controlados ou verificados. Cabeçalhos fornecidos pelo cliente não devem ser considerados confiáveis por conta própria.
+
+No Render, o tráfego público passa por proxies e o IP do socket pode ser o do intermediário, conforme a [orientação oficial sobre IP do cliente](https://render.com/articles/how-render-handles-ddos-attacks). O responsável pelo deployment deve verificar a cadeia efetiva, inclusive domínio público, CDN ou proxy adicional, antes de preencher a variável. Não presuma um único salto.
+
+Em homologação, compare o IP resolvido pelo Express com o IP de clientes conhecidos, confira a cadeia recebida e teste endereços forjados à esquerda do `X-Forwarded-For`. Confirme que clientes diferentes têm limites independentes e que trocar um cabeçalho não reinicia o limite do mesmo cliente. Remova qualquer diagnóstico temporário depois da verificação. A biblioteca documenta esse procedimento em [diagnóstico de proxy e limitador global](https://express-rate-limit.mintlify.app/guides/troubleshooting-proxy-issues). Esta atualização não cria uma rota pública de diagnóstico nem altera o `.env` de nenhum ambiente; a configuração requer reinício ou novo deployment.
+
 ## Banco existente
 
 Para um banco criado pelo SQL antigo que já contém usuarios, categorias, transacoes e metas_financeiras, confira a compatibilidade das tabelas e registre a base com npx prisma migrate resolve --applied 20260803104637_init antes de npm run prisma:migrate. Não use reset para atualizar um banco com dados.
@@ -69,7 +79,7 @@ Depois de instalar as dependências, aplique `npm run prisma:migrate` antes de i
 ## Testes
 
 - npm run typecheck, npm run typecheck:tests e npm run build. A verificação dos testes inclui os arquivos fora de src para detectar referências removidas.
-- npm test: cálculos, centavos, datas, períodos vazios, comparações, finalidade dos tokens e invalidação de sessões. Não depende do frontend.
+- npm test: cálculos, centavos, datas, períodos vazios, comparações, finalidade dos tokens e invalidação de sessões. Inclui o corte de relatórios em hoje, limites entre UTC e São Paulo, períodos futuros e configuração de proxy. Testes HTTP locais de limite por IP usam corpos inválidos para encerrar antes de consultar o banco; verificam clientes independentes, prefixos forjados e proxies não confiáveis. Não depende do frontend nem acessa banco ou e-mail externo.
 - npm run test:integration: API e MySQL local, com contas temporárias e limpeza restrita aos dados dos testes. Cobre categorias por usuário, acesso cruzado, aportes simultâneos, conclusão/reabertura, datas, transações pendentes e relatórios. Também verifica cadastro, confirmação, recuperação, concorrência na redefinição, sessões antigas, limites de requisições e falha/timeout de envio com mock HTTP local da Brevo, sem mensagens para destinatários externos.
 - No frontend, npm run test:e2e executa os fluxos no Chrome em desktop e celular.
 
