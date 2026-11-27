@@ -12,6 +12,10 @@ Nunca publique o arquivo .env. O repositório inclui apenas valores de exemplo.
 
 O cliente em src/generated/prisma é gerado no postinstall. Ele ainda é versionado e pode apresentar diferenças de caminhos locais após npm install; revise o diff antes de commitar. Se o Windows impedir a substituição da DLL durante prisma generate, pare a instância local da API que está usando o Prisma e execute npm run prisma:generate novamente.
 
+## Histórico para apresentação
+
+O comando `npm run demo:seed -- --api https://seu-backend/api` mostra o plano sem gravar. Adicionar `--email conta@exemplo.com --apply` solicita a senha de forma oculta e adiciona o histórico fictício somente à conta autenticada, preservando seus registros. Veja [o roteiro de demonstração e publicação](docs/demonstracao.md) para preparar a conta usada pela Vercel. Não confundir com o seed de categorias do Prisma.
+
 ## Cadastro e confirmação de e-mail
 
 - O envio usa a API HTTPS da Brevo. Preencha BREVO_API_KEY com a chave de API e BREVO_SENDER_EMAIL com um remetente validado na sua conta Brevo; BREVO_SENDER_NAME define o nome exibido. A configuração de SMTP/Gmail da versão anterior não é usada.
