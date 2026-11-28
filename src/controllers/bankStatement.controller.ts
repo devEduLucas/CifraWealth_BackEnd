@@ -17,13 +17,10 @@ export const bankStatementController = {
       }
 
       const parsed = parseBankStatement(fileName, content);
-      const categories = await categoryRepository.findAllByUser(req.userId);
-      const incomeCategory = categories.find((category) => category.tipo === "receita");
-      const expenseCategory = categories.find((category) => category.tipo === "despesa");
-
-      if (!incomeCategory || !expenseCategory) {
-        throw new AppError("Crie ao menos uma categoria de receita e uma de despesa antes de importar o extrato.", 400);
-      }
+      const incomeCategory = await categoryRepository.findByNameAndType(req.userId, "Importação bancária", "receita")
+        ?? await categoryRepository.create(req.userId, { nome: "Importação bancária", tipo: "receita", icone: "landmark" });
+      const expenseCategory = await categoryRepository.findByNameAndType(req.userId, "Importação bancária", "despesa")
+        ?? await categoryRepository.create(req.userId, { nome: "Importação bancária", tipo: "despesa", icone: "landmark" });
 
       let imported = 0;
       let duplicates = 0;
