@@ -50,6 +50,7 @@ model transacoes {
   descricao      String             @db.VarChar(200)
   data_transacao DateTime           @db.Date
   status         transacoes_status? @default(confirmada)
+  import_fingerprint String?          @db.Char(64)
   created_at     DateTime?          @default(now()) @db.Timestamp(0)
   updated_at     DateTime?          @default(now()) @updatedAt @db.Timestamp(0)
   categorias     categorias         @relation(fields: [id_categoria], references: [id_categoria], map: "fk_categoria")
@@ -58,6 +59,7 @@ model transacoes {
   @@index([id_categoria], map: "idx_transacoes_categoria")
   @@index([data_transacao], map: "idx_transacoes_data")
   @@index([id_usuario], map: "idx_transacoes_usuario")
+  @@unique([id_usuario, import_fingerprint], map: "uq_transacao_import_fingerprint")
 }
 
 model usuarios {
