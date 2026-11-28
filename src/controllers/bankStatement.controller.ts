@@ -15,7 +15,7 @@ export const bankStatementController = {
       const fileName = typeof req.body?.fileName === "string" ? req.body.fileName : "";
       if (!fileName) throw new AppError("Informe o nome do arquivo enviado.", 400);
 
-      let parsed;
+      let parsed: Awaited<ReturnType<typeof parseBankStatementPdf>>;
       const isPdf = fileName.toLowerCase().endsWith(".pdf");
 
       if (isPdf) {
