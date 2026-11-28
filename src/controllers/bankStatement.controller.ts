@@ -1,8 +1,11 @@
 import type { NextFunction, Request, Response } from "express";
 import { categoryRepository } from "../repositories/category.repository.js";
 import { prisma } from "../lib/prisma.js";
-import { parseBankStatement } from "../services/bankStatementParser.service.js";
+import { parseBankStatement, parseBankStatementPdf } from "../services/bankStatementParser.service.js";
 import { AppError } from "../utils/AppError.js";
+
+const MAX_FILE_BYTES = 2 * 1024 * 1024;
+const BASE64_PATTERN = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
 
 export const bankStatementController = {
   async import(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -10,13 +13,36 @@ export const bankStatementController = {
       if (!req.userId) throw new AppError("Não autenticado.", 401);
 
       const fileName = typeof req.body?.fileName === "string" ? req.body.fileName : "";
-      const content = typeof req.body?.content === "string" ? req.body.content : "";
-      if (!fileName || !content) throw new AppError("Envie o nome e o conteúdo do arquivo OFX ou CSV.", 400);
-      if (Buffer.byteLength(content, "utf8") > 2 * 1024 * 1024) {
-        throw new AppError("O arquivo excede o limite de 2 MB.", 413);
+      if (!fileName) throw new AppError("Informe o nome do arquivo enviado.", 400);
+
+      let parsed: Awaited<ReturnType<typeof parseBankStatementPdf>>;
+      const isPdf = fileName.toLowerCase().endsWith(".pdf");
+
+      if (isPdf) {
+        const contentBase64 = typeof req.body?.contentBase64 === "string" ? req.body.contentBase64 : "";
+        if (!contentBase64 || !BASE64_PATTERN.test(contentBase64)) {
+          throw new AppError("O conteúdo do PDF está ausente ou inválido. Selecione o arquivo novamente.", 400);
+        }
+
+        const pdfBuffer = Buffer.from(contentBase64, "base64");
+        if (pdfBuffer.length > MAX_FILE_BYTES) {
+          throw new AppError("O arquivo excede o limite de 2 MB.", 413);
+        }
+        if (pdfBuffer.subarray(0, 5).toString("ascii") !== "%PDF-") {
+          throw new AppError("O arquivo selecionado não é um PDF válido.", 400);
+        }
+
+        parsed = await parseBankStatementPdf(pdfBuffer);
+      } else {
+        const content = typeof req.body?.content === "string" ? req.body.content : "";
+        if (!content) throw new AppError("Envie o conteúdo do arquivo OFX ou CSV.", 400);
+        if (Buffer.byteLength(content, "utf8") > MAX_FILE_BYTES) {
+          throw new AppError("O arquivo excede o limite de 2 MB.", 413);
+        }
+
+        parsed = parseBankStatement(fileName, content);
       }
 
-      const parsed = parseBankStatement(fileName, content);
       const incomeCategory = await categoryRepository.findByNameAndType(req.userId, "Importação bancária", "receita")
         ?? await categoryRepository.create(req.userId, { nome: "Importação bancária", tipo: "receita", icone: "landmark" });
       const expenseCategory = await categoryRepository.findByNameAndType(req.userId, "Importação bancária", "despesa")
