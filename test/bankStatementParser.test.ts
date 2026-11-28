@@ -31,7 +31,7 @@ test("parses OFX statement transactions and direction", () => {
 });
 
 test("parses Brazilian CSV with semicolon and decimal comma", () => {
-  const csv = "Data;Descrição;Valor\\n25/11/2026;Mercado;-125,90\\n26/11/2026;Salário;2.500,00";
+  const csv = "Data;Descrição;Valor\n25/11/2026;Mercado;-125,90\n26/11/2026;Salário;2.500,00";
   const result = parseBankStatement("extrato.csv", csv);
   assert.equal(result.length, 2);
   assert.equal(result[0].amount, 125.9);
@@ -41,7 +41,7 @@ test("parses Brazilian CSV with semicolon and decimal comma", () => {
 });
 
 test("creates stable fingerprints for repeated statement entries", () => {
-  const csv = "date,description,amount\\n2026-11-25,Store,-10.00";
+  const csv = "date,description,amount\n2026-11-25,Store,-10.00";
   const first = parseBankStatement("file.csv", csv)[0];
   const second = parseBankStatement("file.csv", csv)[0];
   assert.equal(first.fingerprint, second.fingerprint);
@@ -76,7 +76,7 @@ test("does not guess the type of a PDF movement without a sign or credit/debit m
 
 test("rejects scanned PDFs whose extracted text has no transaction rows", () => {
   assert.throws(
-    () => parsePdfStatementText("Extrato bancário\\nImagem digitalizada\\nNenhum texto disponível"),
+    () => parsePdfStatementText("Extrato bancário\nImagem digitalizada\nNenhum texto disponível"),
     /escaneado como imagem/i
   );
 });
