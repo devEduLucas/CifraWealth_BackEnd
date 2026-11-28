@@ -71,7 +71,10 @@ function normalizeRecord(dateValue: string, amountValue: string, descriptionValu
 function parseOfx(text: string): ParsedStatementTransaction[] {
   const records = text.match(/<STMTTRN>[\s\S]*?<\/STMTTRN>/gi) ?? [];
   return records.flatMap((record) => {
-    const field = (name: string) => record.match(new RegExp(`<${name}>([^\\r\\n<]+)`, "i"))?.[1] ?? "";
+    const field = (name: string) => {
+      const match = record.match(new RegExp("<" + name + ">([^<\\r\\n]+)", "i"));
+      return match?.[1]?.trim() ?? "";
+    };
     const transaction = normalizeRecord(field("DTPOSTED"), field("TRNAMT"), field("MEMO") || field("NAME"));
     return transaction ? [transaction] : [];
   });
